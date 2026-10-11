@@ -103,7 +103,6 @@ function mapDatabaseOrder(row) {
     direccion_entrega: row.direccion_entrega ?? "",
     localidad: row.locality ?? "",
     estado: row.estado_envio ?? "",
-    es_activo: row.es_activo ?? true,
     fecha_creacion: row.fecha_creacion ?? "",
     ultima_actualizacion: row.ultima_actualizacion ?? "",
     notificacion_pendiente: row.notificacion_pendiente ?? false,
@@ -118,6 +117,49 @@ function mapFormOrder(formData) {
     direccion_entrega: String(formData.get("direccion_entrega")).trim(),
     locality: String(formData.get("localidad")).trim(),
   };
+}
+
+const ORDER_STATUS_SEQUENCE = ["empaquetando", "en camino", "recibido"];
+const ORDER_STATUS_LABELS = {
+  empaquetando: "Empaquetando",
+  "en camino": "En camino",
+  recibido: "Recibido",
+  "en transito": "En camino",
+  "listo para recoger": "Recibido",
+};
+
+function normalizeOrderStatus(value) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("es")
+    .trim();
+}
+
+function formatOrderStatus(value) {
+  const normalizedStatus = normalizeOrderStatus(value);
+  return ORDER_STATUS_LABELS[normalizedStatus] ?? (normalizedStatus ? String(value) : "");
+}
+
+function getNextOrderStatus(currentStatus) {
+  const normalizedCurrentStatus = normalizeOrderStatus(currentStatus);
+  const canonicalStatus = ORDER_STATUS_SEQUENCE.includes(normalizedCurrentStatus)
+    ? normalizedCurrentStatus
+    : normalizedCurrentStatus === "en transito" || normalizedCurrentStatus === "listo para recoger"
+      ? normalizedCurrentStatus === "en transito" ? "en camino" : "recibido"
+      : ORDER_STATUS_SEQUENCE[0];
+
+  const index = ORDER_STATUS_SEQUENCE.indexOf(canonicalStatus);
+  if (index === -1) {
+    return ORDER_STATUS_SEQUENCE[0];
+  }
+
+  return ORDER_STATUS_SEQUENCE[Math.min(index + 1, ORDER_STATUS_SEQUENCE.length - 1)];
+}
+
+function isOrderInHistory(order) {
+  const status = normalizeOrderStatus(order.estado);
+  return status === "recibido" || status === "listo para recoger";
 }
 
 async function loadOrders() {
@@ -330,7 +372,7 @@ function renderOrders() {
   const query = normalize(searchInput.value.trim());
   const selectedView = viewSelect.value;
   const visibleOrders = orders.filter((order) => {
-    const matchesView = (selectedView === "active") === order.es_activo;
+    const matchesView = (selectedView === "history") === isOrderInHistory(order);
     const matchesSearch = matchesOrderSearch(order, query);
     return matchesView && matchesSearch;
   }).sort(compareOrders);
@@ -349,8 +391,7 @@ function renderOrders() {
       createCell(order.cliente_telefono),
       createCell(order.direccion_entrega),
       createCell(order.localidad),
-      createCell(order.estado),
-      createCell(order.es_activo),
+      createCell(formatOrderStatus(order.estado)),
       createCell(formatTimestamp(order.fecha_creacion)),
       createCell(formatTimestamp(order.ultima_actualizacion)),
       createCell(order.notificacion_pendiente),
@@ -437,13 +478,38 @@ function closeContextMenu() {
 function openContextMenu(row, x, y) {
   selectedOrderId = row.dataset.orderId;
   renderOrders();
+  const isHistoryView = viewSelect.value === "history";
+  contextMenu.querySelector('[data-action="status"]').hidden = isHistoryView;
+  contextMenu.querySelector('[data-action="finalize"]').hidden = isHistoryView;
+  contextMenu.querySelector('[data-action="reactivate"]').hidden = !isHistoryView;
   contextMenu.hidden = false;
   contextBackdrop.hidden = false;
   const menuWidth = 185;
-  const menuHeight = 87;
+  const menuHeight = contextMenu.offsetHeight;
   contextMenu.style.left = `${Math.max(8, Math.min(x, window.innerWidth - menuWidth - 8))}px`;
   contextMenu.style.top = `${Math.max(8, Math.min(y, window.innerHeight - menuHeight - 8))}px`;
   contextMenu.querySelector("button").focus();
+}
+
+async function updateOrderStatus(order, nextStatus) {
+  const { data, error } = await window.supabaseClient
+    .from("envios")
+    .update({
+      estado_envio: nextStatus,
+      ultima_actualizacion: new Date().toISOString(),
+    })
+    .eq("id_excel", order.id_excel)
+    .select("*")
+    .single();
+
+  if (error) throw error;
+
+  const updatedOrder = mapDatabaseOrder(data);
+  orders = orders.map((item) => item.id_excel === order.id_excel ? updatedOrder : item);
+  viewSelect.value = isOrderInHistory(updatedOrder) ? "history" : "active";
+  selectedOrderId = null;
+  renderOrders();
+  return updatedOrder;
 }
 
 function showToast(message) {
@@ -499,7 +565,47 @@ contextMenu.addEventListener("click", async (event) => {
   const action = event.target.closest("[data-action]")?.dataset.action;
   const order = orders.find((item) => item.id_excel === selectedOrderId);
   if (!order) return closeContextMenu();
-  if (action === "edit") openOrderDialog(order);
+
+  if (action === "edit") {
+    closeContextMenu();
+    openOrderDialog(order);
+    return;
+  }
+
+  if (action === "status") {
+    closeContextMenu();
+    try {
+      const nextStatus = getNextOrderStatus(order.estado);
+      const updatedOrder = await updateOrderStatus(order, nextStatus);
+      showToast(`Estado actualizado: ${formatOrderStatus(updatedOrder.estado)}`);
+    } catch (error) {
+      showToast(`No se pudo cambiar el estado: ${error.message || "Error desconocido."}`);
+    }
+    return;
+  }
+
+  if (action === "finalize") {
+    closeContextMenu();
+    try {
+      await updateOrderStatus(order, "recibido");
+      showToast("Pedido finalizado y movido al historial.");
+    } catch (error) {
+      showToast(`No se pudo finalizar el pedido: ${error.message || "Error desconocido."}`);
+    }
+    return;
+  }
+
+  if (action === "reactivate") {
+    closeContextMenu();
+    try {
+      await updateOrderStatus(order, "empaquetando");
+      showToast("Pedido reactivado y movido a envíos activos.");
+    } catch (error) {
+      showToast(`No se pudo reactivar el pedido: ${error.message || "Error desconocido."}`);
+    }
+    return;
+  }
+
   if (action === "delete") {
     closeContextMenu();
     if (window.confirm(`¿Borrar el envío ${order.tracking_code}?`)) {
@@ -564,7 +670,7 @@ orderForm.addEventListener("submit", async (event) => {
     }
     databaseStatus = "Conectado a Supabase";
     loadError = "";
-    viewSelect.value = savedOrder.es_activo ? "active" : "history";
+    viewSelect.value = isOrderInHistory(savedOrder) ? "history" : "active";
     searchInput.value = "";
     selectedOrderId = savedOrder.id_excel;
     orderDialog.close();

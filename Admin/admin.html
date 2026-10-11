@@ -123,7 +123,6 @@
                   <th scope="col" aria-sort="none"><button class="sort-button" type="button" data-sort="direccion_entrega">Dirección de entrega</button></th>
                   <th scope="col" aria-sort="none"><button class="sort-button" type="button" data-sort="localidad">Localidad</button></th>
                   <th scope="col" aria-sort="none"><button class="sort-button" type="button" data-sort="estado">Estado</button></th>
-                  <th scope="col" aria-sort="none"><button class="sort-button" type="button" data-sort="es_activo">Activo</button></th>
                   <th scope="col" aria-sort="none"><button class="sort-button" type="button" data-sort="fecha_creacion">Fecha de creación</button></th>
                   <th scope="col" aria-sort="none"><button class="sort-button" type="button" data-sort="ultima_actualizacion">Última actualización</button></th>
                   <th scope="col" aria-sort="none"><button class="sort-button" type="button" data-sort="notificacion_pendiente">Notificación pendiente</button></th>
@@ -148,6 +147,9 @@
     <div class="context-backdrop" id="context-backdrop" hidden></div>
     <div class="context-menu" id="context-menu" role="menu" aria-label="Acciones del envío" hidden>
       <button type="button" role="menuitem" data-action="edit"><span aria-hidden="true">✎</span> Editar envío</button>
+      <button type="button" role="menuitem" data-action="status"><span aria-hidden="true">↻</span> Cambiar estado</button>
+      <button type="button" role="menuitem" data-action="finalize"><span aria-hidden="true">✓</span> Finalizar pedido</button>
+      <button type="button" role="menuitem" data-action="reactivate" hidden><span aria-hidden="true">↶</span> Reactivar pedido</button>
       <button class="danger-action" type="button" role="menuitem" data-action="delete"><span aria-hidden="true">⌫</span> Borrar envío</button>
     </div>
 

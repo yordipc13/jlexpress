@@ -75,7 +75,7 @@
           data-tab="nosotros"
           tabindex="-1"
         >
-          Sección 3
+          Solicitar envíos
         </button>
         <button
           class="nav-tab"
@@ -87,7 +87,7 @@
           data-tab="contacto"
           tabindex="-1"
         >
-          Sección 4
+          Información
         </button>
       </nav>
 
@@ -136,8 +136,8 @@
             </div>
             <p>
               En JL Express trabajamos para que tus envíos lleguen a su destino de forma
-              segura y oportuna. Aquí puedes agregar la historia de tu empresa, tus
-              principales servicios y aquello que hace especial a tu equipo.
+              segura y oportuna. También ofrecemos servicios de correos y mandados para
+              ayudarte con documentos, correspondencia y otras entregas.
             </p>
           </section>
         </section>
@@ -167,7 +167,7 @@
                 id="order-code"
                 name="order-code"
                 type="text"
-                placeholder="Ej. LM00163220901"
+                placeholder="Ej. LMXXXXXXXXXXX"
                 autocomplete="off"
                 autocapitalize="characters"
                 spellcheck="false"
@@ -179,7 +179,7 @@
               </button>
             </div>
             <p class="temu-help" id="order-code-help">
-              Ejemplos: LM00163220901, 2634297728093048 o JCR000001123206.
+              Ejemplos: LMXXXXXXXXXXX, 2631297721093041 o JCXXXXXXXXXXXX.
             </p>
 
             <div class="temu-result" id="tracking-result" role="status" aria-live="polite" aria-atomic="true">
@@ -188,23 +188,136 @@
           </form>
         </section>
         <section
-          class="tab-panel blank-panel"
+          class="tab-panel extra-panel"
           id="panel-nosotros"
           role="tabpanel"
           aria-labelledby="tab-nosotros"
           tabindex="0"
           data-panel="nosotros"
           hidden
-        ></section>
+        >
+          <div class="extra-copy">
+            <p class="eyebrow"><span></span> MÁS SERVICIOS PARA TI</p>
+            <h1>¿Necesitas enviar algo <span>más?</span></h1>
+            <p class="extra-description">
+              Además de tus paquetes, te ayudamos con envíos de correspondencia,
+              documentos y mandados. Cuéntanos qué necesitas y coordinaremos contigo
+              los detalles de la entrega.
+            </p>
+            <a
+              class="extra-whatsapp-button"
+              href="https://wa.me/50672394578?text=Hola%2C%20quisiera%20solicitar%20un%20env%C3%ADo%20extra."
+              target="_blank"
+              rel="noreferrer"
+            >
+              <span class="extra-whatsapp-icon" aria-hidden="true">✆</span>
+              Solicitar pedido extra
+              <span class="extra-whatsapp-arrow" aria-hidden="true">↗</span>
+            </a>
+            <p class="extra-note">Te atenderemos por WhatsApp para coordinar tu solicitud.</p>
+          </div>
+          <div class="extra-services" aria-label="Servicios disponibles">
+            <div class="extra-service-card">
+              <span class="extra-service-icon" aria-hidden="true">✉</span>
+              <span>Correspondencia</span>
+            </div>
+            <div class="extra-service-card">
+              <span class="extra-service-icon" aria-hidden="true">▤</span>
+              <span>Documentos</span>
+            </div>
+            <div class="extra-service-card">
+              <span class="extra-service-icon" aria-hidden="true">➜</span>
+              <span>Mandados</span>
+            </div>
+          </div>
+        </section>
         <section
-          class="tab-panel blank-panel"
+          class="tab-panel information-panel"
           id="panel-contacto"
           role="tabpanel"
           aria-labelledby="tab-contacto"
           tabindex="0"
           data-panel="contacto"
           hidden
-        ></section>
+        >
+          <header class="information-heading">
+            <p class="eyebrow"><span></span> ESTAMOS PARA AYUDARTE</p>
+            <h1>Información y <span>ayuda.</span></h1>
+            <p>Conoce más sobre JL Express y encuentra respuestas para tus envíos.</p>
+          </header>
+
+          <section class="information-about" aria-labelledby="information-about-title">
+            <div class="information-about-icon" aria-hidden="true">↗</div>
+            <div>
+              <h2 id="information-about-title">Sobre JL Express</h2>
+              <p>
+                Somos un servicio de transporte y logística enfocado en conectar destinos
+                y personas. Además del rastreo de pedidos, puedes contactarnos para
+                coordinar correspondencia, documentos y mandados.
+              </p>
+            </div>
+          </section>
+
+          <div class="information-columns">
+            <section class="help-section" aria-labelledby="help-title">
+              <div class="information-section-heading">
+                <p class="eyebrow"><span></span> PREGUNTAS FRECUENTES</p>
+                <h2 id="help-title">¿En qué podemos ayudarte?</h2>
+              </div>
+              <div class="help-list">
+                <details class="help-item">
+                  <summary>¿Cómo consulto el estado de mi pedido?</summary>
+                  <p>
+                    Abre la pestaña “Rastreo”, escribe el código de seguimiento de tu
+                    pedido y selecciona “Buscar pedido”.
+                  </p>
+                </details>
+                <details class="help-item">
+                  <summary>¿Qué significa cada estado?</summary>
+                  <p>
+                    “Empaquetando” indica que el pedido se está preparando, “En camino”
+                    que va hacia su destino y “Recibido” que figura como entregado.
+                  </p>
+                </details>
+                <details class="help-item">
+                  <summary>¿Puedo solicitar un envío de cartas o un mandado?</summary>
+                  <p>
+                    Sí. En la pestaña “Solicitar envíos” puedes iniciar una conversación
+                    por WhatsApp para coordinar una solicitud extra.
+                  </p>
+                </details>
+                <details class="help-item">
+                  <summary>¿Qué hago si no encuentro mi pedido?</summary>
+                  <p>
+                    Verifica que el código esté escrito correctamente. Si aún necesitas
+                    ayuda, contáctanos por WhatsApp, teléfono o correo electrónico.
+                  </p>
+                </details>
+              </div>
+            </section>
+
+            <aside class="information-contact" aria-labelledby="information-contact-title">
+              <p class="eyebrow"><span></span> CONTACTO</p>
+              <h2 id="information-contact-title">Hablemos de tu envío.</h2>
+              <p>Elige el medio que prefieras para comunicarte con nosotros.</p>
+              <a class="contact-option" href="https://wa.me/50672394578" target="_blank" rel="noreferrer">
+                <span class="contact-option-icon" aria-hidden="true">✆</span>
+                <span><small>WhatsApp</small><strong>+506 7239 4578</strong></span>
+                <span class="contact-option-arrow" aria-hidden="true">↗</span>
+              </a>
+              <a class="contact-option" href="tel:+50672394578">
+                <span class="contact-option-icon" aria-hidden="true">☎</span>
+                <span><small>Llámanos</small><strong>+506 7239 4578</strong></span>
+                <span class="contact-option-arrow" aria-hidden="true">↗</span>
+              </a>
+              <a class="contact-option" href="mailto:fer92vegam@gmail.com">
+                <span class="contact-option-icon" aria-hidden="true">✉</span>
+                <span><small>Correo electrónico</small><strong>fer92vegam@gmail.com</strong></span>
+                <span class="contact-option-arrow" aria-hidden="true">↗</span>
+              </a>
+            </aside>
+          </div>
+        </section>
       </main>
 
       <footer class="site-footer">

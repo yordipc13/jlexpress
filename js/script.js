@@ -114,8 +114,15 @@ function appendTrackingField(list, label, value) {
   list.append(item);
 }
 
-const trackingStages = ["Empaquetando", "En tránsito", "Listo para recoger"];
+const trackingStages = ["Empaquetando", "En camino", "Recibido"];
 const trackingStageTypes = ["packaging", "transit", "ready"];
+const trackingStatusAliases = {
+  empaquetando: "Empaquetando",
+  "en transito": "En camino",
+  "en camino": "En camino",
+  "listo para recoger": "Recibido",
+  recibido: "Recibido",
+};
 
 function normalizeTrackingStatus(value) {
   return String(value ?? "")
@@ -124,13 +131,18 @@ function normalizeTrackingStatus(value) {
     .toLocaleLowerCase("es");
 }
 
+function resolveTrackingStage(value) {
+  const normalizedStatus = normalizeTrackingStatus(value);
+  return trackingStatusAliases[normalizedStatus] ?? (normalizedStatus ? String(value) : "Empaquetando");
+}
+
 function renderTrackingOrder(order) {
   trackingResult.replaceChildren();
   trackingResult.classList.add("has-order");
 
-  const normalizedStatus = normalizeTrackingStatus(order.estado_envio);
+  const currentStatus = resolveTrackingStage(order.estado_envio);
   const currentStageIndex = trackingStages.findIndex((stage) =>
-    normalizedStatus.includes(normalizeTrackingStatus(stage))
+    normalizeTrackingStatus(stage) === normalizeTrackingStatus(currentStatus)
   );
 
   const heading = document.createElement("div");
@@ -140,15 +152,20 @@ function renderTrackingOrder(order) {
   caption.textContent = "Estado del envío";
   const status = document.createElement("strong");
   status.className = "tracking-status-value";
-  status.textContent = order.estado_envio || "Pendiente de actualización";
+  status.textContent = currentStatus || "Pendiente de actualización";
   heading.append(caption, status);
 
   const steps = document.createElement("ol");
   steps.className = "tracking-steps";
   steps.setAttribute("aria-label", "Progreso del envío");
+  const progress = currentStageIndex < 0
+    ? 0
+    : currentStageIndex / (trackingStages.length - 1);
+  steps.style.setProperty("--tracking-progress", String(progress));
   trackingStages.forEach((stage, index) => {
     const item = document.createElement("li");
     item.className = "tracking-step";
+    item.style.setProperty("--step-index", String(index));
     if (index < currentStageIndex) item.classList.add("is-complete");
     if (index === currentStageIndex) {
       item.classList.add("is-current");

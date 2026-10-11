@@ -160,6 +160,7 @@ th:nth-child(11) { width: 145px; }
 .context-menu { position: fixed; z-index: 6; width: 185px; padding: 5px; background: #fff; border: 1px solid #dce3e8; border-radius: 5px; box-shadow: 0 10px 28px rgb(17 39 54 / 18%); }
 .context-menu[hidden], .context-backdrop[hidden] { display: none; }
 .context-menu button { display: flex; width: 100%; min-height: 37px; align-items: center; gap: 9px; padding: 0 9px; color: var(--ink); background: transparent; border: 0; border-radius: 3px; text-align: left; font-size: 12px; }
+.context-menu button[hidden] { display: none; }
 .context-menu button:hover, .context-menu button:focus-visible { background: #f1f5f7; outline: 0; }
 .context-menu button > span { width: 16px; color: var(--navy); text-align: center; font-size: 15px; }
 .context-menu .danger-action { color: #b63640; }
