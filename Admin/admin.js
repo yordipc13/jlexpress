@@ -8,6 +8,10 @@ let sortField = "id_excel";
 let sortDirection = "asc";
 
 const ordersBody = document.querySelector("#orders-body");
+const tableViewport = document.querySelector(".table-viewport");
+const tableScrollTop = document.querySelector("#table-scroll-top");
+const tableScrollSpacer = document.querySelector("#table-scroll-spacer");
+const ordersTable = tableViewport.querySelector("table");
 const searchInput = document.querySelector("#order-search");
 const viewSelect = document.querySelector("#order-view");
 const contextMenu = document.querySelector("#context-menu");
@@ -27,13 +31,43 @@ const usersButton = document.querySelector("#show-admin-users");
 const usersDialog = document.querySelector("#users-dialog");
 const usersBody = document.querySelector("#admin-users-body");
 const usersMessage = document.querySelector("#users-message");
+const toast = document.querySelector("#toast");
+const toastMessage = document.querySelector("#toast-message");
+const toastActionButton = document.querySelector("#toast-action");
+const customerUpdateDialog = document.querySelector("#customer-update-dialog");
+const customerUpdateMessage = document.querySelector("#customer-update-message");
+const customerUpdateList = document.querySelector("#customer-update-list");
 let currentAdminUser = null;
 let presenceInterval = null;
 let usersRefreshInterval = null;
 let presenceUpdateInProgress = false;
 let presenceTrackingEnabled = false;
+let toastAction = null;
+let customerUpdateResolver = null;
 const ONLINE_WINDOW_MS = 90_000;
 const PRESENCE_INTERVAL_MS = 30_000;
+
+function updateTableScrollWidth() {
+  tableScrollSpacer.style.width = `${ordersTable.scrollWidth}px`;
+}
+
+tableScrollTop.addEventListener("scroll", () => {
+  if (tableViewport.scrollLeft !== tableScrollTop.scrollLeft) {
+    tableViewport.scrollLeft = tableScrollTop.scrollLeft;
+  }
+});
+
+tableViewport.addEventListener("scroll", () => {
+  if (tableScrollTop.scrollLeft !== tableViewport.scrollLeft) {
+    tableScrollTop.scrollLeft = tableViewport.scrollLeft;
+  }
+});
+
+const tableScrollResizeObserver = new ResizeObserver(updateTableScrollWidth);
+tableScrollResizeObserver.observe(tableViewport);
+tableScrollResizeObserver.observe(ordersTable);
+updateTableScrollWidth();
+
 const ORDER_SEARCH_FIELDS = [
   "id_excel",
   "tracking_code",
@@ -136,9 +170,23 @@ function normalizeOrderStatus(value) {
     .trim();
 }
 
+function isPhoneValue(value) {
+  const text = String(value ?? "");
+  const digits = text.replace(/\D/g, "");
+  return digits.length >= 8 && digits.length <= 15 && !/[a-z]/i.test(text);
+}
+
 function formatOrderStatus(value) {
   const normalizedStatus = normalizeOrderStatus(value);
   return ORDER_STATUS_LABELS[normalizedStatus] ?? (normalizedStatus ? String(value) : "");
+}
+
+function toDatabaseOrderStatus(value) {
+  const normalizedStatus = normalizeOrderStatus(value);
+  if (ORDER_STATUS_SEQUENCE.includes(normalizedStatus)) return normalizedStatus;
+  if (normalizedStatus === "en transito") return "en camino";
+  if (normalizedStatus === "listo para recoger") return "recibido";
+  return "";
 }
 
 function getNextOrderStatus(currentStatus) {
@@ -512,13 +560,95 @@ async function updateOrderStatus(order, nextStatus) {
   return updatedOrder;
 }
 
-function showToast(message) {
-  const toast = document.querySelector("#toast");
-  toast.textContent = message;
+function showToast(message, action = null) {
+  if (toastAction && !action) return;
+  toastMessage.textContent = message;
+  toastAction = action?.onClick ?? null;
+  toastActionButton.hidden = !action;
+  toastActionButton.textContent = action?.label ?? "";
   toast.classList.add("is-visible");
   window.clearTimeout(toastTimeout);
-  toastTimeout = window.setTimeout(() => toast.classList.remove("is-visible"), 2800);
+  if (!action) {
+    toastTimeout = window.setTimeout(() => toast.classList.remove("is-visible"), 2800);
+  }
 }
+
+toastActionButton.addEventListener("click", () => {
+  const action = toastAction;
+  toastAction = null;
+  toast.classList.remove("is-visible");
+  if (action) action();
+});
+
+function requestCustomerDataUpdate(entries, fieldLabels) {
+  customerUpdateMessage.textContent = `Se detectaron cambios en los datos de ${formatCount(entries.length)}. ¿Quieres actualizarlos?`;
+  customerUpdateList.replaceChildren();
+  for (const update of entries.slice(0, 5)) {
+    const item = document.createElement("li");
+    item.className = "customer-update-order";
+    const trackingCode = document.createElement("strong");
+    trackingCode.className = "customer-update-tracking";
+    trackingCode.textContent = update.order.tracking_code;
+    const fields = document.createElement("dl");
+    fields.className = "customer-update-fields";
+
+    for (const [field, newValue] of Object.entries(update.customerChanges)) {
+      const row = document.createElement("div");
+      row.className = "customer-update-field";
+      const label = document.createElement("dt");
+      label.textContent = fieldLabels[field];
+      const values = document.createElement("dd");
+      const currentValue = field === "locality" ? update.order.localidad : update.order[field];
+      const current = document.createElement("span");
+      current.className = "customer-update-value";
+      current.textContent = `Actual: ${String(currentValue ?? "").trim() || "(vacío)"}`;
+      const proposed = document.createElement("span");
+      proposed.className = "customer-update-value customer-update-value-new";
+      proposed.textContent = `Nuevo: ${String(newValue ?? "").trim() || "(vacío)"}`;
+      values.append(current, proposed);
+      row.append(label, values);
+      fields.append(row);
+    }
+
+    item.append(trackingCode, fields);
+    customerUpdateList.append(item);
+  }
+  if (entries.length > 5) {
+    const item = document.createElement("li");
+    item.textContent = `Y ${formatCount(entries.length - 5)} más.`;
+    customerUpdateList.append(item);
+  }
+
+  return new Promise((resolve) => {
+    customerUpdateResolver = resolve;
+    showToast("Hay datos de cliente diferentes en el Excel.", {
+      label: "Revisar datos",
+      onClick: () => customerUpdateDialog.showModal(),
+    });
+  });
+}
+
+function finishCustomerDataUpdate(shouldUpdate) {
+  if (!customerUpdateResolver) return;
+  const resolve = customerUpdateResolver;
+  customerUpdateResolver = null;
+  customerUpdateDialog.close();
+  resolve(shouldUpdate);
+}
+
+customerUpdateDialog.addEventListener("close", () => {
+  if (!customerUpdateResolver) return;
+  const resolve = customerUpdateResolver;
+  customerUpdateResolver = null;
+  resolve(false);
+});
+document.querySelector("#close-customer-update").addEventListener("click", () => finishCustomerDataUpdate(false));
+document.querySelector("#keep-customer-data").addEventListener("click", () => finishCustomerDataUpdate(false));
+document.querySelector("#apply-customer-data").addEventListener("click", () => finishCustomerDataUpdate(true));
+customerUpdateDialog.addEventListener("cancel", (event) => {
+  event.preventDefault();
+  finishCustomerDataUpdate(false);
+});
 
 function openOrderDialog(order = null) {
   closeContextMenu();
@@ -690,9 +820,7 @@ excelFile.addEventListener("change", async () => {
     if (!window.XLSX) throw new Error("No se pudo cargar el lector de Excel. Revisa tu conexión e inténtalo de nuevo.");
     const workbook = window.XLSX.read(await file.arrayBuffer(), { type: "array", cellDates: true });
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const csv = window.XLSX.utils.sheet_to_csv(sheet);
-    const csvWorkbook = window.XLSX.read(csv, { type: "string" });
-    const rows = window.XLSX.utils.sheet_to_json(csvWorkbook.Sheets[csvWorkbook.SheetNames[0]], {
+    const rows = window.XLSX.utils.sheet_to_json(sheet, {
       header: 1,
       defval: "",
       raw: false,
@@ -704,6 +832,7 @@ excelFile.addEventListener("change", async () => {
       "cliente_telefono",
       "direccion_entrega",
       "localidad",
+      "estado_envio",
     ];
     const aliases = [
       ["id", "idexcel"],
@@ -712,6 +841,7 @@ excelFile.addEventListener("change", async () => {
       ["clientetelefono", "telefonocliente", "telefono"],
       ["direccionentrega", "direccion"],
       ["locality", "localidad"],
+      ["estado", "status", "estadoenvio", "estadodelenvio"],
     ];
     const firstRow = rows[0] ?? [];
     const normalizedHeaders = firstRow.map((value) =>
@@ -720,50 +850,205 @@ excelFile.addEventListener("change", async () => {
     const hasHeaders = normalizedHeaders.some((header) =>
       aliases.some((fieldAliases) => fieldAliases.includes(header))
     );
+    const dataRows = hasHeaders ? rows.slice(1) : rows;
+    const maxColumnCount = dataRows.reduce((max, row) => Math.max(max, row.length), 0);
+    const detectedColumnIndexes = Array.from({ length: maxColumnCount }, (_, index) => index)
+      .filter((index) => dataRows.some((row) => String(row[index] ?? "").trim()));
     const columnIndexes = hasHeaders
       ? fieldNames.map((_, index) => {
         const headerIndex = normalizedHeaders.findIndex((header) => aliases[index].includes(header));
         return headerIndex < 0 ? index : headerIndex;
       })
-      : fieldNames.map((_, index) => index);
-    const dataRows = hasHeaders ? rows.slice(1) : rows;
+      : detectedColumnIndexes.slice(0, fieldNames.length);
     const imported = [];
-    const usedTrackingCodes = new Set(orders.map((order) => order.tracking_code));
+    const existingOrdersByTracking = new Map(
+      orders.map((order) => [normalize(order.tracking_code), order])
+    );
+    const usedTrackingCodes = new Set();
+    const statusUpdates = new Map();
+    let duplicateRows = 0;
     for (const row of dataRows) {
       if (!row.some((value) => String(value).trim())) continue;
-      const values = columnIndexes.map((index) => row[index] ?? "");
-      const trackingCode = String(values[1]).trim();
+      const values = hasHeaders
+        ? columnIndexes.map((index) => row[index] ?? "")
+        : row.filter((value) => String(value).trim());
+      const phoneIndex = hasHeaders ? 3 : values.findIndex(isPhoneValue);
+      const hasLeadingId = !hasHeaders
+        && /^\d+$/.test(String(values[0] ?? "").trim())
+        && phoneIndex >= 3;
+      const idIndex = hasLeadingId ? 0 : -1;
+      const knownStatusIndex = hasHeaders
+        ? 6
+        : values.findIndex((value, index) => index !== idIndex
+          && ORDER_STATUS_LABELS[normalizeOrderStatus(value)] !== undefined);
+      const statusIndex = knownStatusIndex >= 0 ? knownStatusIndex : hasHeaders ? 6 : hasLeadingId ? 6 : 5;
+      const existingTrackingIndex = hasHeaders
+        ? 1
+        : values.findIndex((value) => existingOrdersByTracking.has(normalize(value)));
+      const likelyTrackingIndex = hasHeaders
+        ? 1
+        : values.findIndex((value, index) => index !== idIndex
+          && index !== phoneIndex
+          && index !== statusIndex
+          && /^[a-z0-9_-]{5,}$/i.test(String(value).trim())
+          && /\d/.test(String(value)));
+      const trackingIndex = existingTrackingIndex >= 0
+        ? existingTrackingIndex
+        : likelyTrackingIndex >= 0 ? likelyTrackingIndex : hasLeadingId ? 1 : hasHeaders ? 1 : 0;
+      const trackingCode = String(values[trackingIndex] ?? "").trim();
       if (!trackingCode) throw new Error("Hay una fila sin tracking_code; este campo es obligatorio.");
-      if (usedTrackingCodes.has(trackingCode)) throw new Error(`El tracking code ${trackingCode} ya existe.`);
-      usedTrackingCodes.add(trackingCode);
-      imported.push({
-        tracking_code: trackingCode,
-        cliente_nombre: String(values[2]).trim(),
-        cliente_telefono: String(values[3]).trim(),
-        direccion_entrega: String(values[4]).trim(),
-        locality: String(values[5]).trim(),
-      });
+      const normalizedTrackingCode = normalize(trackingCode);
+      const importedStatus = String(values[statusIndex] ?? "").trim();
+      const databaseStatusValue = importedStatus ? toDatabaseOrderStatus(importedStatus) : "";
+      if (importedStatus && !databaseStatusValue) {
+        throw new Error(`El estado "${importedStatus}" no es válido. Usa Empaquetando, En camino o Recibido.`);
+      }
+      const existingOrder = existingOrdersByTracking.get(normalizedTrackingCode);
+
+      let importedOrder;
+      if (hasHeaders) {
+        importedOrder = {
+          tracking_code: trackingCode,
+          cliente_nombre: String(values[2]).trim(),
+          cliente_telefono: String(values[3]).trim(),
+          direccion_entrega: String(values[4]).trim(),
+          locality: String(values[5]).trim(),
+        };
+      } else {
+        const reservedIndexes = new Set([idIndex, trackingIndex, phoneIndex, statusIndex]);
+        const otherValues = values.filter((_, index) =>
+          !reservedIndexes.has(index) && String(values[index]).trim()
+        );
+        importedOrder = {
+          tracking_code: trackingCode,
+          cliente_nombre: String(otherValues[0] ?? "").trim(),
+          cliente_telefono: String(values[phoneIndex >= 0 ? phoneIndex : hasLeadingId ? 3 : 2] ?? "").trim(),
+          direccion_entrega: String(otherValues[1] ?? "").trim(),
+          locality: String(otherValues[2] ?? "").trim(),
+        };
+      }
+      if (databaseStatusValue) importedOrder.estado_envio = databaseStatusValue;
+
+      if (existingOrder) {
+        duplicateRows += 1;
+        const pendingUpdate = statusUpdates.get(existingOrder.id_excel) ?? {
+          order: existingOrder,
+          customerChanges: {},
+        };
+        if (databaseStatusValue) {
+          if (normalizeOrderStatus(databaseStatusValue) !== normalizeOrderStatus(existingOrder.estado)) {
+            pendingUpdate.estado_envio = databaseStatusValue;
+          } else {
+            delete pendingUpdate.estado_envio;
+          }
+        }
+
+        const customerFields = [
+          ["cliente_nombre", existingOrder.cliente_nombre, importedOrder.cliente_nombre],
+          ["cliente_telefono", existingOrder.cliente_telefono, importedOrder.cliente_telefono],
+          ["direccion_entrega", existingOrder.direccion_entrega, importedOrder.direccion_entrega],
+          ["locality", existingOrder.localidad, importedOrder.locality],
+        ];
+        for (const [field, currentValue, importedValue] of customerFields) {
+          if (!importedValue) continue;
+          if (importedValue.trim() !== String(currentValue ?? "").trim()) {
+            pendingUpdate.customerChanges[field] = importedValue;
+          } else {
+            delete pendingUpdate.customerChanges[field];
+          }
+        }
+
+        if (pendingUpdate.estado_envio || Object.keys(pendingUpdate.customerChanges).length) {
+          statusUpdates.set(existingOrder.id_excel, pendingUpdate);
+        } else {
+          statusUpdates.delete(existingOrder.id_excel);
+        }
+        continue;
+      }
+
+      if (usedTrackingCodes.has(normalizedTrackingCode)) {
+        throw new Error(`El tracking code ${trackingCode} está repetido en el archivo.`);
+      }
+      usedTrackingCodes.add(normalizedTrackingCode);
+      imported.push(importedOrder);
     }
 
-    if (!imported.length) {
-      showToast("El archivo no contiene envíos. Revisa las columnas A-F; el ID de A se ignora y Supabase lo genera automáticamente.");
-    } else {
-      const { data, error } = await window.supabaseClient
-        .from("envios")
-        .insert(imported)
-        .select("*");
-      if (error) throw error;
-      if (data.length !== imported.length) {
-        throw new Error("Supabase no confirmó todos los envíos importados. Revisa las políticas de acceso.");
+    const customerChangeEntries = [...statusUpdates.values()].filter((update) =>
+      Object.keys(update.customerChanges).length
+    );
+    let declinedCustomerUpdates = 0;
+    if (customerChangeEntries.length) {
+      const fieldLabels = {
+        cliente_nombre: "cliente",
+        cliente_telefono: "teléfono",
+        direccion_entrega: "dirección",
+        locality: "localidad",
+      };
+      const shouldUpdateCustomerData = await requestCustomerDataUpdate(customerChangeEntries, fieldLabels);
+
+      if (!shouldUpdateCustomerData) {
+        declinedCustomerUpdates = customerChangeEntries.length;
+        for (const update of customerChangeEntries) {
+          update.customerChanges = {};
+          if (!update.estado_envio) statusUpdates.delete(update.order.id_excel);
+        }
       }
-      const importedOrders = data.map(mapDatabaseOrder);
-      orders = [...importedOrders, ...orders];
+    }
+
+    if (!imported.length && !statusUpdates.size) {
+      showToast(declinedCustomerUpdates
+        ? `Los datos del cliente de ${formatCount(declinedCustomerUpdates)} se dejaron como estaban.`
+        : duplicateRows
+          ? `Se encontraron ${formatCount(duplicateRows)} ya registrados, pero no había cambios para aplicar.`
+        : "No se detectaron filas de envío en la primera hoja del Excel.");
+    } else {
+      const updatedOrders = [];
+      for (const { order, estado_envio, customerChanges } of statusUpdates.values()) {
+        const updatePayload = {
+          ...customerChanges,
+          ultima_actualizacion: new Date().toISOString(),
+        };
+        if (estado_envio) updatePayload.estado_envio = estado_envio;
+        const { data, error } = await window.supabaseClient
+          .from("envios")
+          .update(updatePayload)
+          .eq("tracking_code", order.tracking_code)
+          .select("*")
+          .single();
+        if (error) throw error;
+        updatedOrders.push(mapDatabaseOrder(data));
+      }
+
+      let importedOrders = [];
+      if (imported.length) {
+        const { data, error } = await window.supabaseClient
+          .from("envios")
+          .insert(imported)
+          .select("*");
+        if (error) throw error;
+        if (data.length !== imported.length) {
+          throw new Error("Supabase no confirmó todos los envíos importados. Revisa las políticas de acceso.");
+        }
+        importedOrders = data.map(mapDatabaseOrder);
+      }
+
+      const updatedOrdersById = new Map(updatedOrders.map((order) => [order.id_excel, order]));
+      orders = [
+        ...importedOrders,
+        ...orders.map((order) => updatedOrdersById.get(order.id_excel) ?? order),
+      ];
       databaseStatus = "Conectado a Supabase";
       loadError = "";
-      viewSelect.value = "active";
+      if (importedOrders.length) viewSelect.value = "active";
       searchInput.value = "";
       renderOrders();
-      showToast(`${formatCount(importedOrders.length)} importados correctamente.`);
+      const resultMessages = [];
+      if (importedOrders.length) resultMessages.push(`${formatCount(importedOrders.length)} importados`);
+      if (updatedOrders.length) resultMessages.push(`${formatCount(updatedOrders.length)} actualizados`);
+      if (declinedCustomerUpdates) {
+        resultMessages.push(`datos del cliente de ${formatCount(declinedCustomerUpdates)} se dejaron igual`);
+      }
+      showToast(`${resultMessages.join("; ")} correctamente.`);
     }
   } catch (error) {
     showToast(error.message || "No se pudo leer el archivo seleccionado.");

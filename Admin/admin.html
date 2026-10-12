@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="admin.css" />
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-    <script src="../supabase.js" defer></script>
+    <script src="supabase.js" defer></script>
     <script src="admin.js" defer></script>
   </head>
   <body>
@@ -112,6 +112,9 @@
             <span id="view-label">Envíos activos</span>
             <span class="table-hint">Clic derecho sobre un envío para ver acciones</span>
           </div>
+          <div class="table-scroll-top" id="table-scroll-top" aria-hidden="true">
+            <div class="table-scroll-spacer" id="table-scroll-spacer"></div>
+          </div>
           <div class="table-viewport" tabindex="0" aria-label="Tabla de envíos, desplázate horizontalmente para ver todas las columnas">
             <table>
               <thead>
@@ -206,6 +209,28 @@
       </div>
     </dialog>
 
-    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <dialog class="customer-update-dialog" id="customer-update-dialog" aria-labelledby="customer-update-title">
+      <div class="customer-update-content">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow"><span></span> IMPORTACIÓN DE EXCEL</p>
+            <h2 id="customer-update-title">Actualizar datos del cliente</h2>
+          </div>
+          <button class="icon-button" id="close-customer-update" type="button" aria-label="Cerrar">×</button>
+        </div>
+        <p class="customer-update-message" id="customer-update-message"></p>
+        <ul class="customer-update-list" id="customer-update-list"></ul>
+        <p class="customer-update-note">El estado de los paquetes se actualizará de todas formas.</p>
+        <div class="dialog-actions">
+          <button class="button button-secondary" id="keep-customer-data" type="button">Dejar como está</button>
+          <button class="button button-primary" id="apply-customer-data" type="button">Actualizar datos</button>
+        </div>
+      </div>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true">
+      <span class="toast-message" id="toast-message"></span>
+      <button class="toast-action" id="toast-action" type="button" aria-haspopup="dialog" aria-controls="customer-update-dialog" hidden></button>
+    </div>
   </body>
 </html>
