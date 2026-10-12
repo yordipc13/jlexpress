@@ -1,0 +1,387 @@
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="JL Express: información y soluciones de transporte y logística."
+    />
+    <meta name="theme-color" content="#123c70"     />
+    <title>JL Express | Transporte y logística</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="supabase.js" defer></script>
+    <script src="js/script.js" defer></script>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="site-header">
+        <a class="brand" href="#inicio" aria-label="JL Express, inicio" data-tab-link="inicio">
+          <img
+            class="brand-mark"
+            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRndonklgS3Yn9cFRm3AP_8DRMhabAHCRXiYNvRyaHirw&amp;s"
+            alt="Logotipo de JL Express"
+          />
+          <span class="brand-name">JL <strong>EXPRESS</strong></span>
+        </a>
+
+        <div class="header-actions">
+          <span class="header-caption">Transporte que conecta</span>
+          <button
+            class="theme-toggle"
+            type="button"
+            id="theme-toggle"
+            aria-pressed="false"
+            aria-label="Activar modo oscuro"
+          >
+            <span class="theme-icon" aria-hidden="true">☾</span>
+            <span class="theme-label">Modo oscuro</span>
+          </button>
+        </div>
+      </header>
+
+      <nav class="main-nav" aria-label="Navegación principal" role="tablist">
+        <button
+          class="nav-tab is-active"
+          type="button"
+          id="tab-inicio"
+          role="tab"
+          aria-selected="true"
+          aria-controls="panel-inicio"
+          data-tab="inicio"
+        >
+          Inicio
+        </button>
+        <button
+          class="nav-tab"
+          type="button"
+          id="tab-servicios"
+          role="tab"
+          aria-selected="false"
+          aria-controls="panel-servicios"
+          data-tab="servicios"
+          tabindex="-1"
+        >
+          Rastreo
+        </button>
+        <button
+          class="nav-tab"
+          type="button"
+          id="tab-nosotros"
+          role="tab"
+          aria-selected="false"
+          aria-controls="panel-nosotros"
+          data-tab="nosotros"
+          tabindex="-1"
+        >
+          Solicitar envíos
+        </button>
+        <button
+          class="nav-tab"
+          type="button"
+          id="tab-contacto"
+          role="tab"
+          aria-selected="false"
+          aria-controls="panel-contacto"
+          data-tab="contacto"
+          tabindex="-1"
+        >
+          Información
+        </button>
+      </nav>
+
+      <main class="main-content">
+        <section
+          class="tab-panel home-panel"
+          id="panel-inicio"
+          role="tabpanel"
+          aria-labelledby="tab-inicio"
+          tabindex="0"
+          data-panel="inicio"
+        >
+          <div class="hero-copy">
+            <p class="eyebrow"><span></span> JL EXPRESS · TRANSPORTE Y LOGÍSTICA</p>
+            <h1>Movemos lo que <span>más importa.</span></h1>
+            <p class="hero-description">
+              Conectamos destinos y personas con un servicio confiable, atención cercana
+              y soluciones pensadas para cada envío.
+            </p>
+            <a class="primary-link" href="#panel-contacto" data-tab-link="contacto">
+              Conoce más <span aria-hidden="true">→</span>
+            </a>
+          </div>
+
+          <div class="photo-grid" aria-label="Espacios para fotografías de la empresa">
+            <div class="photo-placeholder photo-main">
+              <img
+                class="photo-image"
+                src="https://images.hoy.cr/wp-content/uploads/2025/09/Paquetes-Correos-.jpg"
+                alt="Paquetes preparados para envío"
+              />
+              <span class="photo-caption">JL Express · Envíos y paquetes</span>
+            </div>
+            <div class="photo-placeholder photo-secondary" role="img" aria-label="Espacio para fotografía adicional">
+              <span class="photo-placeholder-icon" aria-hidden="true">＋</span>
+              <span>Fotografía adicional</span>
+              <small>Flota, equipo o servicios</small>
+            </div>
+            <span class="photo-accent" aria-hidden="true"></span>
+          </div>
+
+          <section class="company-info" aria-labelledby="company-title">
+            <div class="section-heading">
+              <p class="eyebrow"><span></span> QUIÉNES SOMOS</p>
+              <h2 id="company-title">Tu aliado en cada trayecto.</h2>
+            </div>
+            <p>
+              En JL Express trabajamos para que tus envíos lleguen a su destino de forma
+              segura y oportuna. También ofrecemos servicios de correos y mandados para
+              ayudarte con documentos, correspondencia y otras entregas.
+            </p>
+          </section>
+        </section>
+
+        <section
+          class="tab-panel temu-panel"
+          id="panel-servicios"
+          role="tabpanel"
+          aria-labelledby="tab-servicios"
+          tabindex="0"
+          data-panel="servicios"
+          hidden
+        >
+          <div class="temu-heading">
+            <p class="eyebrow"><span></span> SEGUIMIENTO DE PEDIDOS</p>
+            <h1>Consulta tu pedido <span>TEMU.</span></h1>
+            <p class="temu-description">
+              Ingresa el código de seguimiento para consultar el estado de tu pedido.
+            </p>
+          </div>
+
+          <form class="temu-card" id="tracking-form">
+            <label class="temu-label" for="order-code">Código de pedido</label>
+            <div class="temu-search-row">
+              <input
+                class="temu-code-input"
+                id="order-code"
+                name="order-code"
+                type="text"
+                placeholder="Ej. LMXXXXXXXXXXX"
+                autocomplete="off"
+                autocapitalize="characters"
+                spellcheck="false"
+                aria-describedby="order-code-help"
+                required
+              />
+              <button class="temu-search-button" type="submit">
+                Buscar pedido
+              </button>
+            </div>
+            <p class="temu-help" id="order-code-help">
+              Ejemplos: LMXXXXXXXXXXX, 2631297721093041 o JCXXXXXXXXXXXX.
+            </p>
+
+            <div class="temu-result" id="tracking-result" role="status" aria-live="polite" aria-atomic="true">
+              Aquí aparecerá el estado de tu pedido.
+            </div>
+
+            <section class="tracking-notification" id="tracking-notification" aria-live="polite" hidden>
+              <div id="tracking-notification-prompt" hidden>
+                <p class="tracking-notification-title">¿Quieres recibir actualizaciones?</p>
+                <p class="tracking-notification-copy">Te enviaremos un correo cada vez que cambie el estado de este paquete.</p>
+                <div class="tracking-notification-actions">
+                  <button class="tracking-notification-yes" id="tracking-notification-yes" type="button">Sí, avisarme</button>
+                  <button class="tracking-notification-no" id="tracking-notification-no" type="button">Ahora no</button>
+                </div>
+              </div>
+              <form id="tracking-notification-form" hidden>
+                <label class="temu-label" for="tracking-notification-email">Correo electrónico</label>
+                <div class="temu-search-row">
+                  <input class="temu-code-input" id="tracking-notification-email" name="email" type="email" autocomplete="email" placeholder="nombre@correo.com" required />
+                  <button class="temu-search-button" id="tracking-notification-submit" type="submit">Activar avisos</button>
+                </div>
+              </form>
+              <p class="tracking-notification-message" id="tracking-notification-message" role="status"></p>
+            </section>
+          </form>
+        </section>
+        <section
+          class="tab-panel extra-panel"
+          id="panel-nosotros"
+          role="tabpanel"
+          aria-labelledby="tab-nosotros"
+          tabindex="0"
+          data-panel="nosotros"
+          hidden
+        >
+          <div class="extra-copy">
+            <p class="eyebrow"><span></span> MÁS SERVICIOS PARA TI</p>
+            <h1>¿Necesitas enviar algo <span>más?</span></h1>
+            <p class="extra-description">
+              Además de tus paquetes, te ayudamos con envíos de correspondencia,
+              documentos y mandados. Cuéntanos qué necesitas y coordinaremos contigo
+              los detalles de la entrega.
+            </p>
+            <a
+              class="extra-whatsapp-button"
+              href="https://wa.me/50672394578?text=Hola%2C%20quisiera%20solicitar%20un%20env%C3%ADo%20extra."
+              target="_blank"
+              rel="noreferrer"
+            >
+              <span class="extra-whatsapp-icon" aria-hidden="true">✆</span>
+              Solicitar pedido extra
+              <span class="extra-whatsapp-arrow" aria-hidden="true">↗</span>
+            </a>
+            <p class="extra-note">Te atenderemos por WhatsApp para coordinar tu solicitud.</p>
+          </div>
+          <div class="extra-services" aria-label="Servicios disponibles">
+            <div class="extra-service-card">
+              <span class="extra-service-icon" aria-hidden="true">✉</span>
+              <span>Correspondencia</span>
+            </div>
+            <div class="extra-service-card">
+              <span class="extra-service-icon" aria-hidden="true">▤</span>
+              <span>Documentos</span>
+            </div>
+            <div class="extra-service-card">
+              <span class="extra-service-icon" aria-hidden="true">➜</span>
+              <span>Mandados</span>
+            </div>
+          </div>
+        </section>
+        <section
+          class="tab-panel information-panel"
+          id="panel-contacto"
+          role="tabpanel"
+          aria-labelledby="tab-contacto"
+          tabindex="0"
+          data-panel="contacto"
+          hidden
+        >
+          <header class="information-heading">
+            <p class="eyebrow"><span></span> ESTAMOS PARA AYUDARTE</p>
+            <h1>Información y <span>ayuda.</span></h1>
+            <p>Conoce más sobre JL Express y encuentra respuestas para tus envíos.</p>
+          </header>
+
+          <section class="information-about" aria-labelledby="information-about-title">
+            <div class="information-about-icon" aria-hidden="true">↗</div>
+            <div>
+              <h2 id="information-about-title">Sobre JL Express</h2>
+              <p>
+                Somos un servicio de transporte y logística enfocado en conectar destinos
+                y personas. Además del rastreo de pedidos, puedes contactarnos para
+                coordinar correspondencia, documentos y mandados.
+              </p>
+            </div>
+          </section>
+
+          <div class="information-columns">
+            <section class="help-section" aria-labelledby="help-title">
+              <div class="information-section-heading">
+                <p class="eyebrow"><span></span> PREGUNTAS FRECUENTES</p>
+                <h2 id="help-title">¿En qué podemos ayudarte?</h2>
+              </div>
+              <div class="help-list">
+                <details class="help-item">
+                  <summary>¿Cómo consulto el estado de mi pedido?</summary>
+                  <p>
+                    Abre la pestaña “Rastreo”, escribe el código de seguimiento de tu
+                    pedido y selecciona “Buscar pedido”.
+                  </p>
+                </details>
+                <details class="help-item">
+                  <summary>¿Qué significa cada estado?</summary>
+                  <p>
+                    “Empaquetando” indica que el pedido se está preparando, “En camino”
+                    que va hacia su destino y “Recibido” que figura como entregado.
+                  </p>
+                </details>
+                <details class="help-item">
+                  <summary>¿Puedo solicitar un envío de cartas o un mandado?</summary>
+                  <p>
+                    Sí. En la pestaña “Solicitar envíos” puedes iniciar una conversación
+                    por WhatsApp para coordinar una solicitud extra.
+                  </p>
+                </details>
+                <details class="help-item">
+                  <summary>¿Qué hago si no encuentro mi pedido?</summary>
+                  <p>
+                    Verifica que el código esté escrito correctamente. Si aún necesitas
+                    ayuda, contáctanos por WhatsApp, teléfono o correo electrónico.
+                  </p>
+                </details>
+              </div>
+            </section>
+
+            <aside class="information-contact" aria-labelledby="information-contact-title">
+              <p class="eyebrow"><span></span> CONTACTO</p>
+              <h2 id="information-contact-title">Hablemos de tu envío.</h2>
+              <p>Elige el medio que prefieras para comunicarte con nosotros.</p>
+              <a class="contact-option" href="https://wa.me/50672394578" target="_blank" rel="noreferrer">
+                <span class="contact-option-icon" aria-hidden="true">✆</span>
+                <span><small>WhatsApp</small><strong>+506 7239 4578</strong></span>
+                <span class="contact-option-arrow" aria-hidden="true">↗</span>
+              </a>
+              <a class="contact-option" href="tel:+50672394578">
+                <span class="contact-option-icon" aria-hidden="true">☎</span>
+                <span><small>Llámanos</small><strong>+506 7239 4578</strong></span>
+                <span class="contact-option-arrow" aria-hidden="true">↗</span>
+              </a>
+              <a class="contact-option" href="mailto:fer92vegam@gmail.com">
+                <span class="contact-option-icon" aria-hidden="true">✉</span>
+                <span><small>Correo electrónico</small><strong>fer92vegam@gmail.com</strong></span>
+                <span class="contact-option-arrow" aria-hidden="true">↗</span>
+              </a>
+            </aside>
+          </div>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <div class="footer-brand">
+          <img
+            class="footer-mark"
+            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRndonklgS3Yn9cFRm3AP_8DRMhabAHCRXiYNvRyaHirw&amp;s"
+            alt="Logotipo de JL Express"
+          />
+          <div>
+            <strong>JL EXPRESS</strong>
+            <span>Transporte que conecta</span>
+          </div>
+        </div>
+
+        <div class="footer-contact">
+          <span class="footer-heading">Contacto</span>
+          <a href="tel:+50672394578">+506 7239 4578</a>
+          <a href="mailto:fer92vegam@gmail.com">fer92vegam@gmail.com</a>
+        </div>
+
+        <div class="footer-social">
+          <span class="footer-heading">Síguenos</span>
+          <div class="social-links">
+            <a href="https://www.facebook.com/Mandadosturri" aria-label="Facebook de JL Express" target="_blank" rel="noreferrer">f</a>
+            <a href="https://www.instagram.com/" aria-label="Instagram de JL Express" target="_blank" rel="noreferrer">ig</a>
+            <a href="https://www.linkedin.com/" aria-label="LinkedIn de JL Express" target="_blank" rel="noreferrer">in</a>
+          </div>
+        </div>
+
+        <div class="footer-certifications">
+          <span class="footer-heading">Certificaciones</span>
+          <div class="certification-placeholders" aria-label="Espacios para logotipos y certificaciones">
+            <span>LOGO</span>
+            <span>ISO</span>
+          </div>
+        </div>
+
+        <div class="footer-legal">
+          <span>© <span id="current-year"></span> JL Express</span>
+          <a href="#avisos">Aviso de privacidad</a>
+          <a href="#terminos">Términos y condiciones</a>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>
