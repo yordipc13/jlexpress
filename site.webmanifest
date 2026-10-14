@@ -1,0 +1,16 @@
+{
+  "name": "JL Express",
+  "short_name": "JL Express",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f7fa",
+  "theme_color": "#123c70",
+  "icons": [
+    {
+      "src": "/logo/logo.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

@@ -68,6 +68,8 @@ deno.serve(async (request: Request) => {
 		}
 
 		const updateTime = String(shipment.ultima_actualizacion ?? new Date().toISOString());
+		const formattedUpdateTime = formatUpdateTime(updateTime);
+		const previousStatus = oldStatus || "Estado anterior no disponible";
 		const deliveries = await Promise.allSettled(subscriptions.map(async (subscription: {
 			id: number | string;
 			email: string;
@@ -76,7 +78,9 @@ deno.serve(async (request: Request) => {
 			const customerName = subscription.cliente_nombre.trim() || "cliente";
 			const escapedName = escapeHtml(customerName);
 			const escapedTrackingCode = escapeHtml(trackingCode);
+			const escapedPreviousStatus = escapeHtml(previousStatus);
 			const escapedStatus = escapeHtml(newStatus);
+			const escapedUpdateTime = escapeHtml(formattedUpdateTime);
 			const idempotencyKey = await createIdempotencyKey(trackingCode, updateTime, newStatus, subscription.email);
 			const subscriptionId = String(subscription.id);
 			const unsubscribeSignature = await signUnsubscribeId(subscriptionId, unsubscribeSecret);
@@ -107,14 +111,20 @@ deno.serve(async (request: Request) => {
 									<h1 style="margin:0 0 20px;font-size:22px;line-height:1.3">Tu envío tiene una actualización</h1>
 									<p style="margin:0 0 8px;color:#52657a">Código de seguimiento</p>
 									<p style="margin:0 0 20px;font-size:18px;font-weight:700">${escapedTrackingCode}</p>
-									<p style="margin:0 0 8px;color:#52657a">Nuevo estado</p>
-									<p style="margin:0;padding:14px 16px;border-left:3px solid #e52d45;background:#f5f7fa;font-size:17px;font-weight:700">${escapedStatus}</p>
+									<div style="padding:16px;background:#f5f7fa;border:1px solid #dce3eb;border-radius:6px">
+										<p style="margin:0 0 6px;color:#52657a;font-size:13px">Estado anterior</p>
+										<p style="margin:0 0 16px;font-weight:600">${escapedPreviousStatus}</p>
+										<p style="margin:0 0 6px;color:#52657a;font-size:13px">Estado nuevo</p>
+										<p style="margin:0 0 16px;color:#123c70;font-size:18px;font-weight:700">${escapedStatus}</p>
+										<p style="margin:0 0 6px;color:#52657a;font-size:13px">Actualizado</p>
+										<p style="margin:0">${escapedUpdateTime}</p>
+									</div>
 									<p style="margin:24px 0 0;color:#52657a">Gracias por confiar en JL Express.</p>
 									<p style="margin:20px 0 0;color:#52657a;font-size:13px"><a href="${escapedUnsubscribeUrl}" style="color:#123c70">Cancelar estos avisos</a></p>
 								</div>
 							</div>
 						</div>`,
-					text: `Hola ${customerName},\n\nTu envío ${trackingCode} tiene un nuevo estado: ${newStatus}.\n\nGracias por confiar en JL Express.\n\nPara cancelar estos avisos: ${unsubscribeUrl.toString()}`,
+					text: `Hola ${customerName},\n\nEl estado de tu envío ${trackingCode} cambió.\nEstado anterior: ${previousStatus}.\nEstado nuevo: ${newStatus}.\nActualizado: ${formattedUpdateTime}.\n\nGracias por confiar en JL Express.\n\nPara cancelar estos avisos: ${unsubscribeUrl.toString()}`,
 				}),
 			});
 
@@ -147,6 +157,16 @@ function escapeHtml(value: string) {
 		'"': "&quot;",
 		"'": "&#39;",
 	})[character] ?? character);
+}
+
+function formatUpdateTime(value: string) {
+	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) return value;
+	return new Intl.DateTimeFormat("es-CR", {
+		dateStyle: "long",
+		timeStyle: "short",
+		timeZone: "America/Costa_Rica",
+	}).format(date);
 }
 
 async function createIdempotencyKey(...parts: string[]) {

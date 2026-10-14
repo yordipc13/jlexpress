@@ -13,10 +13,10 @@ const trackingResult = document.querySelector("#tracking-result");
 const trackingNotification = document.querySelector("#tracking-notification");
 const trackingNotificationPrompt = document.querySelector("#tracking-notification-prompt");
 const trackingNotificationForm = document.querySelector("#tracking-notification-form");
-const trackingNotificationEmail = document.querySelector("#tracking-notification-email");
 const trackingNotificationConsent = document.querySelector("#tracking-notification-consent");
 const trackingNotificationSubmit = document.querySelector("#tracking-notification-submit");
 const trackingNotificationMessage = document.querySelector("#tracking-notification-message");
+const VAPID_PUBLIC_KEY = "BM04QKN5xpudplpDvyu-AM1Jux-bv-SDIl1vAJsp1-fvulNWr3Lm3tHG5rIg1MO99CMcBDjF81uHZwuNM78Mp3k";
 let currentTrackingCode = "";
 let currentLanguage = "es";
 
@@ -51,15 +51,17 @@ const appText = {
     "tracking-empty-state": "Aquí aparecerá el estado de tu pedido.",
     "tracking-no-result": "No encontramos un pedido con ese código. Verifica los datos e inténtalo de nuevo.",
     "tracking-notify-question": "¿Quieres recibir actualizaciones?",
-    "tracking-notify-copy": "Te enviaremos un correo cada vez que cambie el estado de este paquete.",
+    "tracking-notify-copy": "Recibirás una notificación en este dispositivo cada vez que cambie el estado de este paquete. En iPhone, primero añade JL Express a tu pantalla de inicio.",
     "tracking-notify-yes": "Sí, avisarme",
     "tracking-notify-no": "Ahora no",
-    "tracking-notify-email": "Correo electrónico",
-    "tracking-notify-submit": "Enviar confirmación",
-    "tracking-notify-activating": "Enviando el correo de confirmación…",
-    "tracking-notify-pending": "Te enviamos un correo para confirmar la suscripción. Revisa tu bandeja de entrada.",
-    "tracking-notify-active": "Esta dirección ya está suscrita a los avisos de este envío.",
-    "tracking-notify-consent": "Acepto recibir correos sobre los cambios de estado de este envío. Puedo cancelar los avisos desde el enlace incluido en cada correo.",
+    "tracking-notify-submit": "Activar notificaciones",
+    "tracking-notify-activating": "Activando las notificaciones…",
+    "tracking-notify-active": "Las notificaciones quedaron activadas en este dispositivo.",
+    "tracking-notify-consent": "Acepto recibir notificaciones push en este dispositivo sobre los cambios de estado de este envío. Puedo desactivarlas desde la configuración del navegador.",
+    "tracking-notify-consent-required": "Acepta recibir notificaciones push para continuar.",
+    "tracking-notify-denied": "El permiso fue bloqueado. Cámbialo en la configuración de notificaciones de tu navegador.",
+    "tracking-notify-unsupported": "Este navegador no admite notificaciones push. Prueba en otro navegador o dispositivo.",
+    "tracking-notify-unconfigured": "Las notificaciones aún no están configuradas. Inténtalo más tarde.",
     "tracking-notify-unavailable": "Las notificaciones de este servicio no están activas.",
     "tracking-status-label": "Estado del envío",
     "tracking-step-label": "Progreso del envío",
@@ -139,15 +141,17 @@ const appText = {
     "tracking-empty-state": "Your order status will appear here.",
     "tracking-no-result": "We could not find an order with that code. Please check the details and try again.",
     "tracking-notify-question": "Want to receive updates?",
-    "tracking-notify-copy": "We will email you each time this package changes status.",
+    "tracking-notify-copy": "You will receive a notification on this device each time this package changes status. On iPhone, add JL Express to your Home Screen first.",
     "tracking-notify-yes": "Yes, notify me",
     "tracking-notify-no": "Not now",
-    "tracking-notify-email": "Email address",
-    "tracking-notify-submit": "Send confirmation",
-    "tracking-notify-activating": "Sending confirmation email…",
-    "tracking-notify-pending": "We sent you an email to confirm your subscription. Check your inbox.",
-    "tracking-notify-active": "This email is already subscribed to updates for this shipment.",
-    "tracking-notify-consent": "I agree to receive emails about this shipment's status changes. I can cancel alerts using the link in any email.",
+    "tracking-notify-submit": "Enable notifications",
+    "tracking-notify-activating": "Enabling notifications…",
+    "tracking-notify-active": "Notifications are now enabled on this device.",
+    "tracking-notify-consent": "I agree to receive push notifications on this device about this shipment's status changes. I can turn them off in my browser settings.",
+    "tracking-notify-consent-required": "Accept push notifications to continue.",
+    "tracking-notify-denied": "Permission was blocked. Change it in your browser's notification settings.",
+    "tracking-notify-unsupported": "This browser does not support push notifications. Try another browser or device.",
+    "tracking-notify-unconfigured": "Notifications are not configured yet. Please try again later.",
     "tracking-notify-unavailable": "Notifications for this service are currently inactive.",
     "tracking-status-label": "Shipment status",
     "tracking-step-label": "Shipment progress",
@@ -274,7 +278,6 @@ function applyLanguage(language) {
   setText(".temu-search-button", "tracking-search");
   setText("#tracking-notification-yes", "tracking-notify-yes");
   setText("#tracking-notification-no", "tracking-notify-no");
-  setText("#tracking-notification-email", "tracking-notify-email", true);
   setText("#tracking-notification-consent-copy", "tracking-notify-consent");
   setText("#tracking-notification-submit", "tracking-notify-submit");
   setEyebrow(".extra-copy .eyebrow", "service-more");
@@ -599,7 +602,7 @@ function renderTrackingOrder(order) {
 
 function notificationWasHandled(trackingCode) {
   try {
-    return window.localStorage.getItem(`ji-express-tracking-notifications:${trackingCode}`) === "done";
+    return window.localStorage.getItem(`ji-express-push-notifications:${trackingCode}`) === "done";
   } catch (error) {
     return false;
   }
@@ -607,7 +610,7 @@ function notificationWasHandled(trackingCode) {
 
 function markNotificationHandled(trackingCode) {
   try {
-    window.localStorage.setItem(`ji-express-tracking-notifications:${trackingCode}`, "done");
+    window.localStorage.setItem(`ji-express-push-notifications:${trackingCode}`, "done");
   } catch (error) {
     console.warn("No se pudo guardar la preferencia de notificaciones.", error);
   }
@@ -630,7 +633,7 @@ function showTrackingNotificationPrompt(trackingCode) {
 document.querySelector("#tracking-notification-yes").addEventListener("click", () => {
   trackingNotificationPrompt.hidden = true;
   trackingNotificationForm.hidden = false;
-  trackingNotificationEmail.focus();
+  trackingNotificationSubmit.focus();
 });
 
 document.querySelector("#tracking-notification-no").addEventListener("click", () => {
@@ -638,36 +641,55 @@ document.querySelector("#tracking-notification-no").addEventListener("click", ()
   trackingNotification.hidden = true;
 });
 
-trackingNotificationForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
+trackingNotificationSubmit.addEventListener("click", async () => {
   if (!currentTrackingCode) return;
 
   trackingNotificationSubmit.disabled = true;
   trackingNotificationMessage.textContent = getText("tracking-notify-activating");
   try {
-    if (!window.supabaseClient || typeof window.supabaseClient.rpc !== "function") {
-      throw new Error("Las notificaciones no están disponibles en este momento.");
-    }
-
     if (!trackingNotificationConsent.checked) {
-      throw new Error(getText("tracking-notify-consent"));
+      throw new Error(getText("tracking-notify-consent-required"));
+    }
+    if (!window.Notification || !("serviceWorker" in navigator) || !("PushManager" in window)) {
+      throw new Error(getText("tracking-notify-unsupported"));
+    }
+    if (!window.supabaseClient || typeof window.supabaseClient.functions?.invoke !== "function") {
+      throw new Error(getText("tracking-notify-unavailable"));
     }
 
-    const { data, error } = await window.supabaseClient.functions.invoke("manage-tracking-subscription", {
+    const permission = Notification.permission === "default"
+      ? await Notification.requestPermission()
+      : Notification.permission;
+    if (permission !== "granted") throw new Error(getText("tracking-notify-denied"));
+
+    const registration = await navigator.serviceWorker.register("/sw.js");
+    await navigator.serviceWorker.ready;
+    const applicationServerKey = decodeVapidPublicKey(VAPID_PUBLIC_KEY);
+    let subscription = await registration.pushManager.getSubscription();
+    if (subscription && !sameApplicationServerKey(subscription.options.applicationServerKey, applicationServerKey)) {
+      await subscription.unsubscribe();
+      subscription = null;
+    }
+    if (!subscription) {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey,
+      });
+    }
+
+    const { error } = await window.supabaseClient.functions.invoke("manage-push-subscription", {
       body: {
         action: "subscribe",
         tracking_code: currentTrackingCode,
-        email: trackingNotificationEmail.value.trim(),
         consent: trackingNotificationConsent.checked,
+        subscription: subscription.toJSON(),
       },
     });
     if (error) throw error;
 
-    if (data?.status === "already_active") markNotificationHandled(currentTrackingCode);
+    markNotificationHandled(currentTrackingCode);
     trackingNotificationForm.hidden = true;
-    trackingNotificationMessage.textContent = data?.status === "already_active"
-      ? getText("tracking-notify-active")
-      : getText("tracking-notify-pending");
+    trackingNotificationMessage.textContent = getText("tracking-notify-active");
   } catch (error) {
     let message = error?.message || "No se pudo activar el aviso. Inténtalo de nuevo.";
     if (error?.context instanceof Response) {
@@ -678,7 +700,7 @@ trackingNotificationForm.addEventListener("submit", async (event) => {
         // Keep the SDK error when the response has no JSON body.
       }
     }
-    const isMissingFunction = /does not exist|function.*not found|manage-tracking-subscription/i.test(message);
+    const isMissingFunction = /does not exist|function.*not found|manage-push-subscription/i.test(message);
 
     if (isMissingFunction) {
       trackingNotificationMessage.textContent = getText("tracking-notify-unavailable");
@@ -690,6 +712,19 @@ trackingNotificationForm.addEventListener("submit", async (event) => {
     trackingNotificationSubmit.disabled = false;
   }
 });
+
+function decodeVapidPublicKey(value) {
+  const padding = "=".repeat((4 - value.length % 4) % 4);
+  const base64 = (value + padding).replace(/-/g, "+").replace(/_/g, "/");
+  return Uint8Array.from(window.atob(base64), (character) => character.charCodeAt(0));
+}
+
+function sameApplicationServerKey(currentKey, expectedKey) {
+  if (!currentKey) return false;
+  const currentBytes = new Uint8Array(currentKey);
+  return currentBytes.length === expectedKey.length
+    && currentBytes.every((byte, index) => byte === expectedKey[index]);
+}
 
 trackingForm.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -726,3 +761,9 @@ trackingForm.addEventListener("submit", async (event) => {
     trackingButton.textContent = getText("tracking-search");
   }
 });
+
+const linkedTrackingCode = new URLSearchParams(window.location.search).get("tracking");
+if (linkedTrackingCode) {
+  trackingInput.value = linkedTrackingCode;
+  trackingForm.requestSubmit();
+}

@@ -392,13 +392,14 @@ function mapDatabaseRoutePackage(row) {
   };
 }
 
-function mapFormOrder(formData) {
+function mapFormOrder(formData, currentStatus = "en sucursal") {
   return {
     tracking_code: String(formData.get("tracking_code")).trim(),
     cliente_nombre: String(formData.get("cliente_nombre")).trim(),
     cliente_telefono: String(formData.get("cliente_telefono")).trim(),
     direccion_entrega: String(formData.get("direccion_entrega")).trim(),
     locality: String(formData.get("localidad")).trim(),
+    estado_envio: toDatabaseOrderStatus(currentStatus) || "en sucursal",
   };
 }
 
@@ -2075,7 +2076,7 @@ orderForm.addEventListener("submit", async (event) => {
     document.querySelector("#field-tracking").focus();
     return;
   }
-  const payload = mapFormOrder(formData);
+  const payload = mapFormOrder(formData, existingOrder?.estado);
   const saveButton = orderForm.querySelector('[type="submit"]');
   saveButton.disabled = true;
   try {
@@ -2328,7 +2329,7 @@ excelFile.addEventListener("change", async () => {
           locality: String(otherValues[2] ?? "").trim(),
         };
       }
-      if (databaseStatusValue) importedOrder.estado_envio = databaseStatusValue;
+      importedOrder.estado_envio = databaseStatusValue || "en sucursal";
 
       if (hasRouteData(importedOrder)) {
         importedRoutePackages.push({

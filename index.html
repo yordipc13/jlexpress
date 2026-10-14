@@ -9,6 +9,10 @@
       content="JL Express: información y soluciones de transporte y logística."
     />
     <meta name="theme-color" content="#123c70"     />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <link rel="apple-touch-icon" href="/logo/logo.png" />
     <title>JL Express | Transporte y logística</title>
     <link rel="stylesheet" href="style.css" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
@@ -188,23 +192,19 @@
           <section class="tracking-notification" id="tracking-notification" aria-live="polite" hidden>
             <div id="tracking-notification-prompt" hidden>
               <p class="tracking-notification-title">¿Quieres recibir actualizaciones?</p>
-              <p class="tracking-notification-copy">Te enviaremos un correo cada vez que cambie el estado de este paquete.</p>
+              <p class="tracking-notification-copy">Recibirás una notificación en este dispositivo cada vez que cambie el estado de este paquete. En iPhone, primero añade JL Express a tu pantalla de inicio.</p>
               <div class="tracking-notification-actions">
                 <button class="tracking-notification-yes" id="tracking-notification-yes" type="button">Sí, avisarme</button>
                 <button class="tracking-notification-no" id="tracking-notification-no" type="button">Ahora no</button>
               </div>
             </div>
-            <form id="tracking-notification-form" hidden>
-              <label class="temu-label" for="tracking-notification-email">Correo electrónico</label>
-              <div class="temu-search-row">
-                <input class="temu-code-input" id="tracking-notification-email" name="email" type="email" autocomplete="email" placeholder="nombre@correo.com" required />
-                <button class="temu-search-button" id="tracking-notification-submit" type="submit">Enviar confirmación</button>
-              </div>
+            <div id="tracking-notification-form" hidden>
               <label class="tracking-notification-consent">
-                <input id="tracking-notification-consent" name="consent" type="checkbox" required />
-                <span id="tracking-notification-consent-copy">Acepto recibir correos sobre los cambios de estado de este envío. Puedo cancelar los avisos desde el enlace incluido en cada correo.</span>
+                <input id="tracking-notification-consent" name="consent" type="checkbox" />
+                <span id="tracking-notification-consent-copy">Acepto recibir notificaciones push en este dispositivo sobre los cambios de estado de este envío. Puedo desactivarlas desde la configuración del navegador.</span>
               </label>
-            </form>
+              <button class="tracking-notification-yes" id="tracking-notification-submit" type="button">Activar notificaciones</button>
+            </div>
             <p class="tracking-notification-message" id="tracking-notification-message" role="status"></p>
           </section>
         </section>
