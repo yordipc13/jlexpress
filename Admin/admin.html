@@ -14,8 +14,8 @@
     <link rel="stylesheet" href="admin.css" />
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-    <script src="supabase.js" defer></script>
-    <script src="admin.js" defer></script>
+    <script src="js/supabase.js" defer></script>
+    <script src="js/admin.js?v=16" defer></script>
   </head>
   <body>
     <div class="admin-shell">
@@ -23,7 +23,7 @@
         <a class="brand" href="../index.html" aria-label="JL Express, página principal">
           <img
             class="brand-mark"
-            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRndonklgS3Yn9cFRm3AP_8DRMhabAHCRXiYNvRyaHirw&amp;s"
+            src="logo/logo.png"
             alt=""
           />
           <span class="brand-name">JL <strong>EXPRESS</strong></span>
@@ -31,6 +31,10 @@
         <div class="topbar-divider" aria-hidden="true"></div>
         <p class="topbar-title">Administración</p>
         <div class="topbar-actions">
+          <button class="admin-error-button" id="show-admin-errors" type="button" aria-label="Ver errores" aria-haspopup="dialog" aria-controls="admin-errors-dialog" title="Ver errores">
+            <span aria-hidden="true">!</span>
+            <span class="admin-error-count" id="admin-error-count" hidden>0</span>
+          </button>
           <button class="button button-secondary theme-toggle" id="theme-toggle" type="button" aria-pressed="false" aria-label="Activar modo oscuro">
             <span class="theme-icon" aria-hidden="true">☾</span>
             <span class="theme-label">Modo oscuro</span>
@@ -76,13 +80,16 @@
           <div class="toolbar">
             <div class="toolbar-actions">
               <button class="button button-primary" id="add-order" type="button">
-                <span class="button-icon" aria-hidden="true">＋</span> Agregar envío
+                <span class="button-icon" aria-hidden="true">＋</span> <span id="add-order-label">Agregar envío</span>
               </button>
-              <button class="button button-secondary" id="import-orders" type="button" title="El ID de la columna A se ignora; Supabase genera id_excel automáticamente.">
+              <button class="button button-secondary" id="import-orders" type="button" title="Importa envíos anteriores o el formato de rutas y paquetes.">
                 <span class="button-icon import-icon" aria-hidden="true">↑</span> Importar Excel
               </button>
               <button class="button button-secondary refresh-button" id="refresh-orders" type="button" title="Actualizar la tabla desde Supabase">
                 <span class="button-icon" aria-hidden="true">↻</span> Actualizar
+              </button>
+              <button class="button button-debug-clear" id="debug-clear-orders" type="button" title="Elige si quieres borrar datos de ruta o envíos activos.">
+                Borrar datos
               </button>
               <input id="excel-file" type="file" accept=".xlsx,.xls,.csv" hidden />
             </div>
@@ -92,9 +99,9 @@
                 <input
                   id="order-search"
                   type="search"
-                  placeholder="Buscar por ID, tracking, cliente, teléfono, dirección o localidad..."
+                  placeholder="Buscar en todas las columnas..."
                   autocomplete="off"
-                  aria-label="Buscar en todos los envíos"
+                  aria-label="Buscar envíos en todas las columnas"
                 />
                 <kbd>Ctrl F</kbd>
               </label>
@@ -102,15 +109,29 @@
                 <span class="sr-only">Mostrar envíos</span>
                 <select id="order-view">
                   <option value="active">Envíos activos</option>
-                  <option value="history">Historial</option>
+                  <option value="history">Historial unificado</option>
+                  <option value="route-data">Datos de ruta</option>
+                  <option value="empresa-3">Xcargo</option>
+                </select>
+              </label>
+              <label class="select-wrap history-type-filter" id="history-type-filter-wrap" for="history-type-filter" hidden>
+                <span class="sr-only">Filtrar el historial por tipo</span>
+                <select id="history-type-filter">
+                  <option value="all">Todos los tipos</option>
+                  <option value="envios">Envíos</option>
+                  <option value="ruta">Ruta</option>
+                  <option value="xcargo">Xcargo</option>
                 </select>
               </label>
             </div>
           </div>
 
           <div class="table-meta">
-            <span id="view-label">Envíos activos</span>
-            <span class="table-hint">Clic derecho sobre un envío para ver acciones</span>
+            <div class="table-meta-start">
+              <button class="sort-direction-toggle" id="sort-direction-toggle" type="button" aria-label="Cambiar a orden descendente" title="Orden ascendente">↑</button>
+              <span id="view-label">Envíos activos</span>
+            </div>
+            <span class="table-hint">Clic derecho sobre una fila para ver acciones</span>
           </div>
           <div class="table-scroll-top" id="table-scroll-top" aria-hidden="true">
             <div class="table-scroll-spacer" id="table-scroll-spacer"></div>
@@ -118,18 +139,7 @@
           <div class="table-viewport" tabindex="0" aria-label="Tabla de envíos, desplázate horizontalmente para ver todas las columnas">
             <table>
               <thead>
-                <tr>
-                  <th scope="col" aria-sort="ascending"><button class="sort-button" type="button" data-sort="id_excel">ID Excel</button></th>
-                  <th scope="col" aria-sort="none"><button class="sort-button" type="button" data-sort="tracking_code">Tracking code</button></th>
-                  <th scope="col" aria-sort="none"><button class="sort-button" type="button" data-sort="cliente_nombre">Cliente</button></th>
-                  <th scope="col" aria-sort="none"><button class="sort-button" type="button" data-sort="cliente_telefono">Teléfono</button></th>
-                  <th scope="col" aria-sort="none"><button class="sort-button" type="button" data-sort="direccion_entrega">Dirección de entrega</button></th>
-                  <th scope="col" aria-sort="none"><button class="sort-button" type="button" data-sort="localidad">Localidad</button></th>
-                  <th scope="col" aria-sort="none"><button class="sort-button" type="button" data-sort="estado">Estado</button></th>
-                  <th scope="col" aria-sort="none"><button class="sort-button" type="button" data-sort="fecha_creacion">Fecha de creación</button></th>
-                  <th scope="col" aria-sort="none"><button class="sort-button" type="button" data-sort="ultima_actualizacion">Última actualización</button></th>
-                  <th scope="col" aria-sort="none"><button class="sort-button" type="button" data-sort="notificacion_pendiente">Notificación pendiente</button></th>
-                </tr>
+                <tr></tr>
               </thead>
               <tbody id="orders-body"></tbody>
             </table>
@@ -148,12 +158,12 @@
     </div>
 
     <div class="context-backdrop" id="context-backdrop" hidden></div>
-    <div class="context-menu" id="context-menu" role="menu" aria-label="Acciones del envío" hidden>
-      <button type="button" role="menuitem" data-action="edit"><span aria-hidden="true">✎</span> Editar envío</button>
+    <div class="context-menu" id="context-menu" role="menu" aria-label="Acciones del registro" hidden>
+      <button type="button" role="menuitem" data-action="edit"><span aria-hidden="true">✎</span><span class="context-action-label">Editar envío</span></button>
       <button type="button" role="menuitem" data-action="status"><span aria-hidden="true">↻</span> Cambiar estado</button>
-      <button type="button" role="menuitem" data-action="finalize"><span aria-hidden="true">✓</span> Finalizar pedido</button>
-      <button type="button" role="menuitem" data-action="reactivate" hidden><span aria-hidden="true">↶</span> Reactivar pedido</button>
-      <button class="danger-action" type="button" role="menuitem" data-action="delete"><span aria-hidden="true">⌫</span> Borrar envío</button>
+      <button type="button" role="menuitem" data-action="finalize"><span aria-hidden="true">✓</span><span class="context-action-label">Finalizar pedido</span></button>
+      <button type="button" role="menuitem" data-action="reactivate" hidden><span aria-hidden="true">↶</span><span class="context-action-label">Reactivar pedido</span></button>
+      <button class="danger-action" type="button" role="menuitem" data-action="delete"><span aria-hidden="true">⌫</span><span class="context-action-label">Borrar envío</span></button>
     </div>
 
     <dialog class="order-dialog" id="order-dialog" aria-labelledby="dialog-title">
@@ -178,6 +188,128 @@
           <button class="button button-primary" type="submit">Guardar envío</button>
         </div>
       </form>
+    </dialog>
+
+    <dialog class="order-dialog" id="route-package-dialog" aria-labelledby="route-package-dialog-title">
+      <form id="route-package-form">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow"><span></span> DATOS DE RUTA</p>
+            <h2 id="route-package-dialog-title">Actualizar paquete</h2>
+          </div>
+          <button class="icon-button" id="close-route-package-dialog" type="button" aria-label="Cerrar">×</button>
+        </div>
+        <div class="form-grid">
+          <label class="form-field" for="route-field-package-id">ID paquete<input id="route-field-package-id" name="id_paquete" /></label>
+          <label class="form-field" for="route-field-company-number">Número de empresa<input id="route-field-company-number" name="tracking_code" /></label>
+          <label class="form-field" for="route-field-customer">Cliente<input id="route-field-customer" name="cliente_nombre" /></label>
+          <label class="form-field" for="route-field-phone">Teléfono<input id="route-field-phone" name="cliente_telefono" /></label>
+          <label class="form-field" for="route-field-total">Total a pagar<input id="route-field-total" name="total_a_pagar" /></label>
+          <label class="form-field" for="route-field-profile">Perfil<input id="route-field-profile" name="perfil" /></label>
+          <label class="form-field" for="route-field-route-id">ID ruta<input id="route-field-route-id" name="ruta_id" /></label>
+          <label class="form-field" for="route-field-route-name">Nombre de ruta<input id="route-field-route-name" name="ruta_nombre" /></label>
+          <label class="form-field" for="route-field-route-status">Estado de ruta<input id="route-field-route-status" name="ruta_estado" /></label>
+          <label class="form-field" for="route-field-start">Inicio de ruta<input id="route-field-start" name="ruta_fecha_inicio" /></label>
+          <label class="form-field" for="route-field-end">Fin de ruta<input id="route-field-end" name="ruta_fecha_fin" /></label>
+          <label class="form-field" for="route-field-updated">Fecha de ruta<input id="route-field-updated" name="ruta_fecha_actualizacion" /></label>
+        </div>
+        <div class="dialog-actions">
+          <button class="button button-secondary" id="cancel-route-package-dialog" type="button">Cancelar</button>
+          <button class="button button-primary" type="submit">Guardar cambios</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="order-dialog" id="empresa-3-dialog" aria-labelledby="empresa-3-dialog-title">
+      <form id="empresa-3-form">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow"><span></span> PAQUETES EMPRESA 3</p>
+            <h2 id="empresa-3-dialog-title">Agregar envío</h2>
+          </div>
+          <button class="icon-button" id="close-empresa-3-dialog" type="button" aria-label="Cerrar">×</button>
+        </div>
+        <div class="form-grid">
+          <label class="form-field" for="empresa-3-field-id">ID (automático)<input id="empresa-3-field-id" readonly /></label>
+          <label class="form-field" for="empresa-3-field-tracking">Guía<input id="empresa-3-field-tracking" name="tracking_code" required /></label>
+          <label class="form-field" for="empresa-3-field-name">Nombre del cliente<input id="empresa-3-field-name" name="cliente_nombre" /></label>
+          <label class="form-field" for="empresa-3-field-phone">Número de teléfono<input id="empresa-3-field-phone" name="cliente_telefono" type="tel" /></label>
+          <label class="form-field" for="empresa-3-field-location">Ubicación<input id="empresa-3-field-location" name="ubicacion" /></label>
+          <label class="form-field" for="empresa-3-field-warehouse">Almacén<input id="empresa-3-field-warehouse" name="almacen" /></label>
+          <label class="form-field" for="empresa-3-field-status">Estado
+            <select id="empresa-3-field-status" name="estado_envio" required>
+              <option value="en sucursal">en sucursal</option>
+              <option value="en camino">En camino</option>
+              <option value="recibido">Recibido</option>
+              <option value="entregado">Entregado</option>
+              <option value="inactivo">Inactivo</option>
+            </select>
+          </label>
+        </div>
+        <div class="dialog-actions">
+          <button class="button button-secondary" id="cancel-empresa-3-dialog" type="button">Cancelar</button>
+          <button class="button button-primary" type="submit">Guardar envío</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="users-dialog route-package-delete-dialog" id="route-package-delete-dialog" aria-labelledby="route-package-delete-title">
+      <div class="users-dialog-content">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow"><span></span> CONFIRMAR</p>
+            <h2 id="route-package-delete-title">¿Eliminar paquete?</h2>
+          </div>
+          <button class="icon-button" id="close-route-package-delete" type="button" aria-label="Cerrar">×</button>
+        </div>
+        <p class="route-package-delete-message" id="route-package-delete-message"></p>
+        <p class="route-package-delete-error" id="route-package-delete-error" role="alert" aria-live="polite"></p>
+        <div class="dialog-actions">
+          <button class="button button-secondary" id="cancel-route-package-delete" type="button">Cancelar</button>
+          <button class="button button-danger" id="confirm-route-package-delete" type="button">Eliminar</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog class="users-dialog route-package-update-dialog" id="route-package-update-dialog" aria-labelledby="route-package-update-title">
+      <div class="users-dialog-content">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow"><span></span> CONFIRMAR CAMBIOS</p>
+            <h2 id="route-package-update-title">Actualizar datos de ruta</h2>
+          </div>
+          <button class="icon-button" id="close-route-package-update" type="button" aria-label="Cerrar">×</button>
+        </div>
+        <p class="route-package-update-message" id="route-package-update-message"></p>
+        <ul class="route-package-update-list" id="route-package-update-list"></ul>
+        <div class="dialog-actions">
+          <button class="button button-secondary" id="cancel-route-package-update" type="button">Dejar como está</button>
+          <button class="button button-primary" id="confirm-route-package-update" type="button">Guardar cambios</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog class="users-dialog debug-clear-dialog" id="debug-clear-dialog" aria-labelledby="debug-clear-title">
+      <div class="users-dialog-content">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow"><span></span> ELIMINAR DATOS</p>
+            <h2 id="debug-clear-title">¿Qué datos deseas borrar?</h2>
+          </div>
+          <button class="icon-button" id="close-debug-clear" type="button" aria-label="Cerrar">×</button>
+        </div>
+        <p class="debug-clear-message" id="debug-clear-message">Selecciona una categoría para continuar.</p>
+        <p class="debug-clear-error" id="debug-clear-error" role="alert" aria-live="polite"></p>
+        <div class="debug-clear-options" id="debug-clear-options">
+          <button class="button button-secondary" type="button" data-clear-category="route">Datos de la ruta</button>
+          <button class="button button-secondary" type="button" data-clear-category="active">Envíos activos</button>
+          <button class="button button-secondary" type="button" data-clear-category="xcargo">Xcargo</button>
+        </div>
+        <div class="dialog-actions" id="debug-clear-confirm-actions" hidden>
+          <button class="button button-secondary" id="cancel-debug-clear" type="button">Cancelar</button>
+          <button class="button button-danger" id="confirm-debug-clear" type="button">Borrar</button>
+        </div>
+      </div>
     </dialog>
 
     <dialog class="users-dialog" id="users-dialog" aria-labelledby="users-dialog-title">
@@ -205,6 +337,23 @@
         </div>
         <div class="dialog-actions">
           <button class="button button-secondary" id="refresh-admin-users" type="button">Actualizar</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog class="users-dialog admin-errors-dialog" id="admin-errors-dialog" aria-labelledby="admin-errors-title">
+      <div class="users-dialog-content">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow"><span></span> REGISTRO</p>
+            <h2 id="admin-errors-title">registro de errores</h2>
+          </div>
+          <button class="icon-button" id="close-admin-errors" type="button" aria-label="Cerrar">×</button>
+        </div>
+        <p class="admin-errors-empty" id="admin-errors-empty">No hay errores registrados.</p>
+        <ol class="admin-errors-list" id="admin-errors-list" aria-live="polite"></ol>
+        <div class="dialog-actions">
+          <button class="button button-secondary" id="clear-admin-errors" type="button">Limpiar errores</button>
         </div>
       </div>
     </dialog>

@@ -1,17 +1,19 @@
 -- Run this in the Supabase SQL Editor after applying the admin access migration.
--- These UUIDs identify the individual Auth accounts granted the admin role.
+-- Replace the placeholder UUID with the Auth user UUID(s), not email addresses.
 DO $$
 DECLARE
   admin_user_ids uuid[] := ARRAY[
-    'ae587146-836d-4b26-87e1-b6faf0638b07'::uuid,
-    '6f260e35-166f-4e50-8529-3e050ab7a0af'::uuid,
-    '579501f3-1a97-49d3-887b-23764320288d'::uuid
+    '00000000-0000-0000-0000-000000000000'::uuid
   ];
   admin_role text := 'admin';
   updated_users integer;
 BEGIN
   IF admin_role IS NULL OR pg_catalog.btrim(admin_role) = '' THEN
     RAISE EXCEPTION 'Specify a non-empty app_metadata role.';
+  END IF;
+
+  IF '00000000-0000-0000-0000-000000000000'::uuid = ANY(admin_user_ids) THEN
+    RAISE EXCEPTION 'Replace the placeholder with the Auth user UUID(s) before running this script.';
   END IF;
 
   UPDATE auth.users
