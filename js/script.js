@@ -93,6 +93,29 @@ const appText = {
     "certifications": "Certificaciones",
     "privacy": "Aviso de privacidad",
     "terms": "Términos y condiciones",
+    "privacy-eyebrow": "AVISO DE PRIVACIDAD",
+    "privacy-title": "Cómo tratamos tus datos",
+    "privacy-intro": "JL Express es un servicio de mensajería con sede en Turrialba, Costa Rica. Este aviso explica cómo tratamos los datos al visitar el sitio, consultar envíos y activar notificaciones push.",
+    "privacy-tracking-title": "Rastreo y protección del servicio",
+    "privacy-tracking-copy": "Al consultar un envío, el código se contrasta con los registros de envíos almacenados en Supabase, nuestro proveedor de base de datos. La respuesta pública muestra el código, el estado y la última actualización. Para limitar consultas automatizadas, el sistema usa la IP recibida de Cloudflare y guarda un HMAC, no la IP en claro; el límite es de 20 consultas por minuto.",
+    "privacy-push-title": "Notificaciones push opcionales",
+    "privacy-push-copy": "Solo si aceptas y otorgas permiso al navegador se guarda, para este dispositivo, el código del envío, el endpoint y las claves técnicas de la suscripción, además de la fecha de consentimiento. Se usan únicamente para avisarte de cambios de estado mediante notificaciones push; no son avisos por correo ni SMS. La suscripción se elimina cuando el pedido se completa o el servicio detecta un endpoint vencido. Puedes revocar el permiso en la configuración del navegador.",
+    "privacy-browser-title": "Almacenamiento en el navegador",
+    "privacy-browser-copy": "El sitio guarda localmente tus preferencias de idioma y tema, y si ya respondiste a la invitación de notificaciones para un código. El código del sitio no integra una herramienta propia de analítica.",
+    "privacy-retention-title": "Conservación y consultas",
+    "privacy-retention-copy": "Los registros de envíos se conservan durante el tiempo necesario para prestar y dar seguimiento al servicio, y según las obligaciones aplicables. Para consultas o solicitudes relacionadas con tus datos, utiliza el botón Soporte del sitio.",
+    "terms-eyebrow": "TÉRMINOS Y CONDICIONES",
+    "terms-title": "Uso del sitio y coordinación de envíos",
+    "terms-intro": "Estos términos cubren el uso del sitio de JL Express para consultar el estado de envíos y solicitar servicios de mensajería, entregas o mandados. Cada servicio se coordina por separado mediante WhatsApp.",
+    "terms-quotes-title": "Tarifas y entrega",
+    "terms-quotes-copy": "La disponibilidad, el precio, el alcance y los detalles de cada entrega o pedido se coordinan directamente por WhatsApp. El sitio no publica tarifas ni plazos generales de entrega. Revisa y acuerda las condiciones con JL Express antes de confirmar una solicitud.",
+    "terms-tracking-title": "Rastreo del pedido",
+    "terms-tracking-copy": "Ingresa únicamente un código de seguimiento que estés autorizado a consultar y evita compartirlo públicamente. JL Express actualiza el estado del envío en el sistema; la información puede tardar en reflejar un cambio y no constituye por sí sola una confirmación de entrega.",
+    "terms-push-title": "Notificaciones y uso permitido",
+    "terms-push-copy": "Las notificaciones push son opcionales, requieren tu consentimiento y se envían a este dispositivo cuando cambia el estado del envío. Dependen del navegador, el dispositivo y la conexión; puedes retirar el permiso desde la configuración del navegador. Para proteger el rastreo, se permiten hasta 20 consultas por minuto y por IP; los excesos pueden recibir una respuesta temporal HTTP 429.",
+    "terms-rights-title": "Derechos y contacto",
+    "terms-rights-copy": "Estos términos no limitan los derechos que te correspondan conforme a la normativa aplicable en Costa Rica. Para reportar un extravío u otro problema con un envío, o para hacer una consulta, utiliza el botón Soporte del sitio. Las condiciones de cada servicio se coordinan por WhatsApp.",
+    "legal-updated": "Actualizado: 15 de octubre de 2026.",
     "service-more": "MÁS SERVICIOS PARA TI",
     "service-more-title-part-one": "¿Necesitas enviar algo",
     "service-more-title-part-two": "más?",
@@ -183,6 +206,29 @@ const appText = {
     "certifications": "Certifications",
     "privacy": "Privacy notice",
     "terms": "Terms and conditions",
+    "privacy-eyebrow": "PRIVACY NOTICE",
+    "privacy-title": "How we handle your data",
+    "privacy-intro": "JL Express is a courier service based in Turrialba, Costa Rica. This notice explains how we handle data when you visit the site, track shipments, and enable push notifications.",
+    "privacy-tracking-title": "Tracking and service protection",
+    "privacy-tracking-copy": "When you track a shipment, the code is checked against shipment records stored in Supabase, our database provider. The public response shows the code, status, and last update. To limit automated queries, the system uses the IP address received from Cloudflare and stores an HMAC, not the IP address in plain text; the limit is 20 queries per minute.",
+    "privacy-push-title": "Optional push notifications",
+    "privacy-push-copy": "Only if you agree and grant browser permission are the shipment code, subscription endpoint, technical subscription keys, and consent date stored for this device. They are used only to notify you of status changes by push notification, not by email or SMS. The subscription is removed when the shipment is completed or the service detects an expired endpoint. You can revoke permission in your browser settings.",
+    "privacy-browser-title": "Browser storage",
+    "privacy-browser-copy": "The site stores your language and theme preferences, and whether you have already responded to the push-notification prompt for a tracking code, in your browser's local storage. The site code does not include its own analytics tool.",
+    "privacy-retention-title": "Retention and requests",
+    "privacy-retention-copy": "Shipment records are kept for as long as needed to provide and track the service, and as required by applicable obligations. For questions or requests about your data, use the Support button on the site.",
+    "terms-eyebrow": "TERMS AND CONDITIONS",
+    "terms-title": "Using this site and coordinating shipments",
+    "terms-intro": "These terms cover use of the JL Express website to check shipment status and request courier, delivery, or errand services. Each service is coordinated separately through WhatsApp.",
+    "terms-quotes-title": "Fees and delivery",
+    "terms-quotes-copy": "Availability, price, scope, and delivery details for each request are coordinated directly through WhatsApp. The site does not publish general rates or delivery timeframes. Review and agree on the conditions with JL Express before confirming a request.",
+    "terms-tracking-title": "Shipment tracking",
+    "terms-tracking-copy": "Only enter a tracking code you are authorized to use, and avoid sharing it publicly. JL Express updates shipment status in the system; information may take time to reflect a change and is not, by itself, confirmation of delivery.",
+    "terms-push-title": "Notifications and acceptable use",
+    "terms-push-copy": "Push notifications are optional, require your consent, and are sent to this device when the shipment status changes. They depend on your browser, device, and connection; you can revoke permission in your browser settings. To protect tracking, up to 20 queries per minute per IP are allowed; excess requests may receive a temporary HTTP 429 response.",
+    "terms-rights-title": "Rights and contact",
+    "terms-rights-copy": "These terms do not limit any rights you have under applicable Costa Rican law. To report a missing shipment or another issue, or to ask a question, use the Support button on the site. Service conditions are coordinated through WhatsApp.",
+    "legal-updated": "Updated: October 15, 2026.",
     "service-more": "MORE SERVICES FOR YOU",
     "service-more-title-part-one": "Need to send something",
     "service-more-title-part-two": "else?",
@@ -312,12 +358,18 @@ function applyLanguage(language) {
   setText(".footer-brand span", "footer-brand-tagline");
   setText(".footer-legal a[href='#avisos']", "privacy");
   setText(".footer-legal a[href='#terminos']", "terms");
-  const firstContactText = document.querySelector(".contact-option:nth-child(1) small");
-  if (firstContactText) firstContactText.textContent = getText("contact-option-whatsapp");
-  const firstCallText = document.querySelector(".contact-option:nth-child(2) small");
-  if (firstCallText) firstCallText.textContent = getText("call-us");
-  const firstEmailText = document.querySelector(".contact-option:nth-child(3) small");
-  if (firstEmailText) firstEmailText.textContent = getText("contact-option-email");
+  document.querySelectorAll("[data-legal-text]").forEach((element) => {
+    element.textContent = getText(element.dataset.legalText);
+  });
+  document.querySelectorAll(".contact-option-whatsapp-label").forEach((label) => {
+    label.textContent = getText("contact-option-whatsapp");
+  });
+  document.querySelectorAll(".contact-option-call-label").forEach((label) => {
+    label.textContent = getText("call-us");
+  });
+  document.querySelectorAll(".contact-option-email-label").forEach((label) => {
+    label.textContent = getText("contact-option-email");
+  });
 
   const trackingNotificationPromptTitle = document.querySelector(".tracking-notification-title");
   if (trackingNotificationPromptTitle) trackingNotificationPromptTitle.textContent = getText("tracking-notify-question");
@@ -395,6 +447,27 @@ for (const link of document.querySelectorAll("[data-tab-link]")) {
   });
 }
 
+const legalSectionIds = new Set(["avisos", "terminos"]);
+
+function showLegalSectionFromHash() {
+  const sectionId = window.location.hash.slice(1);
+  if (!legalSectionIds.has(sectionId)) return;
+
+  showInformation();
+  const section = document.getElementById(sectionId);
+  requestAnimationFrame(() => {
+    section?.scrollIntoView({ behavior: "smooth", block: "start" });
+    section?.focus({ preventScroll: true });
+  });
+}
+
+window.addEventListener("hashchange", showLegalSectionFromHash);
+window.addEventListener("popstate", showLegalSectionFromHash);
+for (const link of document.querySelectorAll(".footer-legal a[href^='#']")) {
+  link.addEventListener("click", () => showInformation());
+}
+showLegalSectionFromHash();
+
 const landingSectionObserver = new IntersectionObserver((entries) => {
   if (!informationPanel.hidden) return;
 
@@ -438,17 +511,26 @@ let themePreference = savedTheme === "dark" || savedTheme === "light"
   ? savedTheme
   : null;
 const systemTheme = window.matchMedia("(prefers-color-scheme: dark)");
+const mobileTheme = window.matchMedia("(max-width: 620px)");
+
+function syncThemePreference() {
+  setDarkMode(mobileTheme.matches || themePreference === null
+    ? systemTheme.matches
+    : themePreference === "dark");
+}
 
 currentLanguage = getPreferredLanguage();
 applyLanguage(currentLanguage);
-setDarkMode(themePreference ? themePreference === "dark" : systemTheme.matches);
+syncThemePreference();
 systemTheme.addEventListener("change", (event) => {
-  if (themePreference === null) {
+  if (mobileTheme.matches || themePreference === null) {
     setDarkMode(event.matches);
   }
 });
+mobileTheme.addEventListener("change", syncThemePreference);
 
 themeToggle.addEventListener("click", () => {
+  if (mobileTheme.matches) return;
   const enabled = !document.body.classList.contains("dark-mode");
   themePreference = enabled ? "dark" : "light";
   setDarkMode(enabled);

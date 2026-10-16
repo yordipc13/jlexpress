@@ -11,6 +11,8 @@ self.addEventListener("push", (event) => {
     icon: "/logo/logo.png",
     badge: "/logo/logo.png",
     tag: payload.tag || "jl-express-update",
+    renotify: true,
+    actions: [{ action: "open_tracking", title: "Ver pedido", icon: "/logo/logo.png" }],
     data: { url: payload.url || "/" },
   }));
 });

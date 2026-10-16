@@ -262,15 +262,24 @@ let themePreference = savedTheme === "dark" || savedTheme === "light"
   ? savedTheme
   : null;
 const systemTheme = window.matchMedia("(prefers-color-scheme: dark)");
+const mobileTheme = window.matchMedia("(max-width: 520px)");
 
-setDarkMode(themePreference ? themePreference === "dark" : systemTheme.matches);
+function syncThemePreference() {
+  setDarkMode(mobileTheme.matches || themePreference === null
+    ? systemTheme.matches
+    : themePreference === "dark");
+}
+
+syncThemePreference();
 systemTheme.addEventListener("change", (event) => {
-  if (themePreference === null) {
+  if (mobileTheme.matches || themePreference === null) {
     setDarkMode(event.matches);
   }
 });
+mobileTheme.addEventListener("change", syncThemePreference);
 
 themeToggle.addEventListener("click", () => {
+  if (mobileTheme.matches) return;
   const enabled = !document.body.classList.contains("dark-mode");
   themePreference = enabled ? "dark" : "light";
   setDarkMode(enabled);
@@ -1394,6 +1403,23 @@ function showToast(message, action = null) {
     toastTimeout = window.setTimeout(() => toast.classList.remove("is-visible"), 2800);
   }
 }
+
+document.addEventListener("dblclick", async (event) => {
+  const cell = event.target.closest(
+    ".table-viewport td, .table-viewport th, .users-table td, .users-table th"
+  );
+  if (!cell) return;
+
+  const cellText = cell.innerText.trim();
+  if (!cellText) return;
+
+  try {
+    await navigator.clipboard.writeText(cellText);
+    showToast("Contenido copiado.");
+  } catch (error) {
+    reportAdminError(`No se pudo copiar el contenido: ${error.message || "Error desconocido."}`);
+  }
+});
 
 toastActionButton.addEventListener("click", () => {
   const action = toastAction;

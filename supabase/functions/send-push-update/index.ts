@@ -58,11 +58,9 @@ deno.serve(async (request: Request) => {
 		if (!subscriptions.length) return Response.json({ sent: 0, reason: "No hay suscripciones push para este pedido." });
 
 		webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
-		const updateTime = String(shipment.ultima_actualizacion ?? new Date().toISOString());
-		const updatedAt = formatUpdateTime(updateTime);
 		const pushPayload = JSON.stringify({
-			title: "JL Express: cambio en tu pedido",
-			body: `${trackingCode}: ${oldStatus || "Estado anterior no disponible"} → ${newStatus}. Actualizado ${updatedAt}.`,
+			title: "JL Express",
+			body: `${notificationMessage(newStatus)}\nCódigo: ${trackingCode}`,
 			tag: `shipment-${trackingCode}`,
 			url: `/?tracking=${encodeURIComponent(trackingCode)}#panel-servicios`,
 		});
@@ -92,6 +90,9 @@ deno.serve(async (request: Request) => {
 			&& [404, 410].includes(Number((delivery.reason as { statusCode?: number })?.statusCode))).length;
 		const failedCount = deliveries.filter((delivery) => delivery.status === "rejected").length - expiredCount;
 		const sentCount = deliveries.length - failedCount - expiredCount;
+		if (isDeliveredStatus(newStatus) && failedCount === 0) {
+			await removeTrackingSubscriptions(trackingCode, supabaseUrl, serviceRoleKey);
+		}
 		return Response.json({ sent: sentCount, failed: failedCount, expired: expiredCount }, {
 			status: failedCount ? 502 : 200,
 		});
@@ -118,12 +119,43 @@ async function removeExpiredSubscription(id: number | string, supabaseUrl: strin
 	if (!response.ok) console.error("No se pudo eliminar una suscripción push vencida.");
 }
 
-function formatUpdateTime(value: string) {
-	const date = new Date(value);
-	if (Number.isNaN(date.getTime())) return value;
-	return new Intl.DateTimeFormat("es-CR", {
-		dateStyle: "long",
-		timeStyle: "short",
-		timeZone: "America/Costa_Rica",
-	}).format(date);
+async function removeTrackingSubscriptions(trackingCode: string, supabaseUrl: string, serviceRoleKey: string) {
+	const deleteUrl = new URL("/rest/v1/notificaciones_push", supabaseUrl);
+	deleteUrl.searchParams.set("tracking_code", `eq.${trackingCode}`);
+	const response = await fetch(deleteUrl, {
+		method: "DELETE",
+		headers: serviceHeaders(serviceRoleKey),
+	});
+	if (!response.ok) throw new Error(`No se pudieron eliminar las suscripciones del envío (${response.status}).`);
+}
+
+function isDeliveredStatus(value: string) {
+	const normalizedStatus = value
+		.normalize("NFD")
+		.replace(/[\u0300-\u036f]/g, "")
+		.toLocaleLowerCase("es")
+		.trim();
+	return ["recibido", "entregado", "listo para recoger"].includes(normalizedStatus);
+}
+
+function notificationMessage(value: string) {
+	const normalizedStatus = value
+		.normalize("NFD")
+		.replace(/[\u0300-\u036f]/g, "")
+		.toLocaleLowerCase("es")
+		.trim();
+
+	if (["en camino", "en transito"].includes(normalizedStatus)) {
+		return "Tu pedido se encuentra en camino.";
+	}
+	if (normalizedStatus.startsWith("en sucursal") || normalizedStatus === "empaquetando") {
+		return "Tu pedido se encuentra en sucursal Turrialba.";
+	}
+	if (["recibido", "entregado"].includes(normalizedStatus)) {
+		return "El paquete ha sido entregado.";
+	}
+	if (normalizedStatus === "listo para recoger") {
+		return "Tu pedido está listo para recoger.";
+	}
+	return "Tu pedido tiene una actualización.";
 }
