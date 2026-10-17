@@ -1,11 +1,11 @@
+export {};
+
 const deno = (globalThis as typeof globalThis & {
 	Deno: {
 		env: { get: (name: string) => string | undefined };
 		serve: (handler: (request: Request) => Response | Promise<Response>) => void;
 	};
 }).Deno;
-
-export {};
 
 const corsHeaders = {
 	"Access-Control-Allow-Origin": "*",

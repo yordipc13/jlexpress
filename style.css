@@ -297,7 +297,7 @@ h1 span {
   transform: translateY(-1px);
 }
 
-.primary-link span {
+.primary-link > span[aria-hidden="true"] {
   color: #ffb7bd;
   font-size: 18px;
 }

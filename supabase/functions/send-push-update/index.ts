@@ -130,20 +130,12 @@ async function removeTrackingSubscriptions(trackingCode: string, supabaseUrl: st
 }
 
 function isDeliveredStatus(value: string) {
-	const normalizedStatus = value
-		.normalize("NFD")
-		.replace(/[\u0300-\u036f]/g, "")
-		.toLocaleLowerCase("es")
-		.trim();
+	const normalizedStatus = normalizeStatus(value);
 	return ["recibido", "entregado", "listo para recoger"].includes(normalizedStatus);
 }
 
 function notificationMessage(value: string) {
-	const normalizedStatus = value
-		.normalize("NFD")
-		.replace(/[\u0300-\u036f]/g, "")
-		.toLocaleLowerCase("es")
-		.trim();
+	const normalizedStatus = normalizeStatus(value);
 
 	if (["en camino", "en transito"].includes(normalizedStatus)) {
 		return "Tu pedido se encuentra en camino.";
@@ -158,4 +150,12 @@ function notificationMessage(value: string) {
 		return "Tu pedido está listo para recoger.";
 	}
 	return "Tu pedido tiene una actualización.";
+}
+
+function normalizeStatus(value: string) {
+	return value
+		.normalize("NFD")
+		.replace(/[\\u0300-\\u036f]/g, "")
+		.toLocaleLowerCase("es")
+		.trim();
 }

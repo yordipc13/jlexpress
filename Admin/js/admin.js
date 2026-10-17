@@ -1,6 +1,8 @@
 let orders = [];
 let routePackages = [];
 let companyThreeShipments = [];
+const selectedOrderIds = new Set();
+let orderSelectionMode = false;
 let selectedOrderId = null;
 let selectedRoutePackageTrackingCode = null;
 let selectedCompanyThreeId = null;
@@ -49,6 +51,13 @@ const authMessage = document.querySelector("#auth-message");
 const loginSubmit = document.querySelector("#login-submit");
 const signOutButton = document.querySelector("#sign-out");
 const refreshOrdersButton = document.querySelector("#refresh-orders");
+const deleteSelectedOrdersButton = document.querySelector("#delete-selected-orders");
+const bulkDeleteDialog = document.querySelector("#bulk-delete-dialog");
+const bulkDeleteMessage = document.querySelector("#bulk-delete-message");
+const bulkDeleteError = document.querySelector("#bulk-delete-error");
+const confirmBulkDeleteButton = document.querySelector("#confirm-bulk-delete");
+const clearOrderSelectionButton = document.querySelector("#clear-order-selection");
+const tableHint = document.querySelector(".table-hint");
 const debugClearOrdersButton = document.querySelector("#debug-clear-orders");
 const addOrderButton = document.querySelector("#add-order");
 const addOrderLabel = document.querySelector("#add-order-label");
@@ -77,6 +86,7 @@ const customerUpdateMessage = document.querySelector("#customer-update-message")
 const customerUpdateList = document.querySelector("#customer-update-list");
 let currentAdminUser = null;
 let pendingClearCategory = null;
+let pendingBulkDeleteIds = [];
 let presenceInterval = null;
 let usersRefreshInterval = null;
 let presenceUpdateInProgress = false;
@@ -334,7 +344,7 @@ function formatRouteDateTime(value) {
 
   const isIsoDate = match === isoMatch;
   const year = Number(isIsoDate ? match[1] : match[3]);
-  const month = Number(isIsoDate ? match[2] : match[2]);
+  const month = Number(match[2]);
   const day = Number(isIsoDate ? match[3] : match[1]);
   const normalizedYear = year < 100 ? year + (year >= 50 ? 1900 : 2000) : year;
   const validDate = new Date(Date.UTC(normalizedYear, month - 1, day));
@@ -708,6 +718,83 @@ refreshOrdersButton.addEventListener("click", async () => {
   }
 });
 
+deleteSelectedOrdersButton.addEventListener("click", () => {
+  if (currentAdminUser?.app_metadata?.role !== "admin") {
+    reportAdminError("Necesitas una sesión de administrador para borrar envíos.");
+    return;
+  }
+
+  pendingBulkDeleteIds = [...selectedOrderIds];
+  const numericIds = pendingBulkDeleteIds.map(Number);
+  if (!pendingBulkDeleteIds.length || numericIds.some((id) => !Number.isSafeInteger(id) || id <= 0)) return;
+
+  bulkDeleteMessage.textContent = `Se eliminarán ${pendingBulkDeleteIds.length} ${pendingBulkDeleteIds.length === 1 ? "pedido" : "pedidos"} seleccionados. Esta acción no se puede deshacer.`;
+  bulkDeleteError.textContent = "";
+  bulkDeleteDialog.showModal();
+  confirmBulkDeleteButton.focus();
+});
+
+document.querySelector("#close-bulk-delete").addEventListener("click", () => bulkDeleteDialog.close());
+document.querySelector("#cancel-bulk-delete").addEventListener("click", () => bulkDeleteDialog.close());
+bulkDeleteDialog.addEventListener("close", () => {
+  pendingBulkDeleteIds = [];
+  confirmBulkDeleteButton.disabled = false;
+  bulkDeleteError.textContent = "";
+});
+
+confirmBulkDeleteButton.addEventListener("click", async () => {
+  const selectedIds = [...pendingBulkDeleteIds];
+  if (!selectedIds.length) return bulkDeleteDialog.close();
+  if (currentAdminUser?.app_metadata?.role !== "admin") {
+    bulkDeleteError.textContent = "Tu sesión de administrador ya no está activa.";
+    return;
+  }
+
+  const numericIds = selectedIds.map(Number);
+  confirmBulkDeleteButton.disabled = true;
+  confirmBulkDeleteButton.setAttribute("aria-busy", "true");
+  bulkDeleteError.textContent = "";
+  try {
+    const { data, error } = await window.supabaseClient.rpc(
+      "borrar_envios_activos_y_sincronizar",
+      { p_ids_excel: numericIds },
+    );
+    if (error) throw error;
+    const deletedCount = Number(data);
+    if (!Number.isSafeInteger(deletedCount) || deletedCount < 0 || deletedCount > selectedIds.length) {
+      throw new Error("Supabase no confirmó cuántos envíos se borraron.");
+    }
+
+    const removedIds = new Set(selectedIds);
+    orders = orders.filter((order) => !removedIds.has(String(order.id_excel)));
+    selectedOrderIds.clear();
+    orderSelectionMode = false;
+    if (removedIds.has(String(selectedOrderId))) selectedOrderId = null;
+    bulkDeleteDialog.close();
+    renderOrders();
+    showToast(deletedCount === selectedIds.length
+      ? `Se borraron ${formatCount(deletedCount)} y se actualizó el contador.`
+      : `Se borraron ${deletedCount} de ${selectedIds.length} pedidos seleccionados.`);
+  } catch (error) {
+    const message =
+      `No se pudieron borrar los envíos seleccionados: ${error.message || "Error desconocido."} ` +
+      "Verifica que hayas ejecutado Admin/supabase-envios-id-management.sql en el SQL Editor de Supabase.";
+    bulkDeleteError.textContent = message;
+    reportAdminError(message);
+  } finally {
+    confirmBulkDeleteButton.disabled = false;
+    confirmBulkDeleteButton.removeAttribute("aria-busy");
+    renderOrders();
+  }
+});
+
+clearOrderSelectionButton.addEventListener("click", () => {
+  selectedOrderIds.clear();
+  orderSelectionMode = false;
+  renderOrders();
+  showToast("Selección cancelada.");
+});
+
 debugClearOrdersButton.addEventListener("click", () => {
   if (currentAdminUser?.app_metadata?.role !== "admin") {
     reportAdminError("Necesitas una sesión de administrador para borrar datos.");
@@ -842,6 +929,8 @@ function showLogin(message = "") {
   signOutButton.hidden = true;
   authMessage.textContent = message;
   databaseStatus = "Inicia sesión para consultar los envíos";
+  selectedOrderIds.clear();
+  orderSelectionMode = false;
   orders = [];
   renderOrders();
 }
@@ -1014,12 +1103,17 @@ signOutButton.addEventListener("click", async () => {
 
 function renderOrders() {
   const query = normalize(searchInput.value.trim());
+  const availableOrderIds = new Set(orders.map((order) => String(order.id_excel)));
+  for (const id of selectedOrderIds) {
+    if (!availableOrderIds.has(id)) selectedOrderIds.delete(id);
+  }
   const selectedView = viewSelect.value;
   const isHistoryView = selectedView === "history";
   historyTypeFilterWrap.hidden = !isHistoryView;
   ordersTable.classList.toggle("route-data-table", selectedView === "route-data");
   const isRouteView = selectedView === "route-data";
   const isCompanyThreeView = selectedView === "empresa-3";
+  const canSelectOrders = !isRouteView && !isCompanyThreeView;
   const columns = isRouteView
     ? ROUTE_TABLE_COLUMNS
     : isCompanyThreeView
@@ -1070,6 +1164,7 @@ function renderOrders() {
             : "empresa-3";
       row.dataset.historySource = preferredSource;
       if (order.historial_order_id) row.dataset.historyOrderId = order.historial_order_id;
+      if (order.historial_order_id) row.dataset.orderId = String(order.historial_order_id);
       if (order.historial_route_tracking_code) {
         row.dataset.historyRouteTrackingCode = order.historial_route_tracking_code;
       }
@@ -1088,6 +1183,8 @@ function renderOrders() {
     } else {
       row.dataset.routePackageTrackingCode = order.tracking_code;
     }
+    const rowOrderId = isHistoryView ? order.historial_order_id : isRouteView || isCompanyThreeView ? "" : order.id_excel;
+    if (rowOrderId && selectedOrderIds.has(String(rowOrderId))) row.classList.add("is-bulk-selected");
     row.tabIndex = 0;
     row.setAttribute("aria-label", isHistoryView
       ? `${order.historial_tipo}: ${order.tracking_code} ${order.cliente_nombre}`
@@ -1101,6 +1198,15 @@ function renderOrders() {
     ));
     ordersBody.append(row);
   }
+
+  deleteSelectedOrdersButton.hidden = !canSelectOrders || selectedOrderIds.size === 0;
+  clearOrderSelectionButton.hidden = !orderSelectionMode;
+  deleteSelectedOrdersButton.textContent = `Borrar seleccionados (${selectedOrderIds.size})`;
+  ordersBody.classList.toggle("is-selecting", orderSelectionMode && canSelectOrders);
+  tableHint.classList.toggle("is-selection-mode", orderSelectionMode && canSelectOrders);
+  tableHint.textContent = orderSelectionMode && canSelectOrders
+    ? "Toca filas para añadirlas o quitarlas de la selección"
+    : "Clic derecho para seleccionar o ver acciones";
 
   document.querySelector("#result-count").textContent = isHistoryView
     ? `${visibleOrders.length} ${visibleOrders.length === 1 ? "registro" : "registros"}`
@@ -1288,6 +1394,11 @@ function openContextMenu(row, x, y) {
   contextMenu.querySelector('[data-action="edit"] .context-action-label').textContent = isRoutePackage
     ? "Actualizar datos de ruta"
     : isCompanyThree ? "Editar envío empresa 3" : "Editar envío";
+  const selectOrderAction = contextMenu.querySelector('[data-action="select"]');
+  selectOrderAction.hidden = isRoutePackage || isCompanyThree || !selectedOrderId;
+  selectOrderAction.querySelector(".context-action-label").textContent = selectedOrderIds.has(String(selectedOrderId))
+    ? "Quitar selección"
+    : "Seleccionar pedido";
   contextMenu.querySelector('[data-action="delete"] .context-action-label').textContent = isRoutePackage
     ? "Eliminar paquete de ruta"
     : isCompanyThree ? "Borrar envío empresa 3" : "Borrar envío";
@@ -1835,6 +1946,19 @@ let routeLongPressTimer = null;
 let routeLongPressPointerId = null;
 let routeLongPressOrigin = null;
 
+ordersBody.addEventListener("click", (event) => {
+  if (!orderSelectionMode || event.button !== 0) return;
+  const row = event.target.closest("tr[data-order-id]");
+  if (!row) return;
+  const order = orders.find((item) => String(item.id_excel) === row.dataset.orderId);
+  if (!order) return;
+
+  const id = String(order.id_excel);
+  if (selectedOrderIds.has(id)) selectedOrderIds.delete(id);
+  else selectedOrderIds.add(id);
+  renderOrders();
+});
+
 function cancelRouteLongPress() {
   if (routeLongPressTimer !== null) window.clearTimeout(routeLongPressTimer);
   routeLongPressTimer = null;
@@ -1991,6 +2115,17 @@ contextMenu.addEventListener("click", async (event) => {
   const order = orders.find((item) => item.id_excel === selectedOrderId);
   if (!order) return closeContextMenu();
 
+  if (action === "select") {
+    const id = String(order.id_excel);
+    if (selectedOrderIds.has(id)) selectedOrderIds.delete(id);
+    else selectedOrderIds.add(id);
+    orderSelectionMode = true;
+    closeContextMenu();
+    renderOrders();
+    showToast(selectedOrderIds.has(id) ? "Pedido seleccionado." : "Pedido quitado de la selección.");
+    return;
+  }
+
   if (action === "edit") {
     closeContextMenu();
     openOrderDialog(order);
@@ -2042,6 +2177,7 @@ contextMenu.addEventListener("click", async (event) => {
         if (error) throw error;
         if (Number(data) !== 1) throw new Error("No se encontró el envío para borrar.");
         orders = orders.filter((item) => item.id_excel !== order.id_excel);
+        selectedOrderIds.delete(String(order.id_excel));
         selectedOrderId = null;
         renderOrders();
         showToast("Envío borrado y contador de IDs actualizado.");

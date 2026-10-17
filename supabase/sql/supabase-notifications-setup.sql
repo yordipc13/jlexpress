@@ -239,8 +239,8 @@ BEGIN
   SET status = 'unsubscribed',
       unsubscribed_at = pg_catalog.now(),
       confirmation_token_hash = NULL,
-        confirmation_expires_at = NULL
-      WHERE id = p_subscription_id
+      confirmation_expires_at = NULL
+  WHERE id = p_subscription_id
     AND status IN ('active', 'pending');
 
   RETURN FOUND;

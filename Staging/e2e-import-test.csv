@@ -1,0 +1,4 @@
+tracking_code,cliente_nombre,cliente_telefono,direccion_entrega,localidad,estado_envio
+E2E-TEST-001,Prueba E2E Uno,+50680000001,Direccion QA,Centro,en sucursal
+E2E-TEST-002,Prueba E2E Dos,+50680000002,Direccion QA,Centro,en camino
+,Prueba sin codigo,+50680000003,Direccion QA,Centro,en sucursal

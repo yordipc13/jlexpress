@@ -311,7 +311,7 @@ function applyLanguage(language) {
   setEyebrow(".hero-copy .eyebrow", "hero-eyebrow");
   setHeadlineWithAccent(".hero-copy h1", "hero-title-part-one", "hero-title-part-two");
   setText(".hero-description", "hero-description");
-  setText(".primary-link", "hero-link");
+  setText(".primary-link-label", "hero-link");
   setEyebrow(".company-info .eyebrow", "company-eyebrow");
   setText("#company-title", "company-title");
   setText(".company-info p", "company-description");
@@ -321,15 +321,13 @@ function applyLanguage(language) {
   setText("label[for='order-code']", "tracking-code-label");
   setText("#order-code", "tracking-code-placeholder", true);
   setText("#order-code-help", "tracking-code-help");
-  setText(".temu-search-button", "tracking-search");
   setText("#tracking-notification-yes", "tracking-notify-yes");
   setText("#tracking-notification-no", "tracking-notify-no");
   setText("#tracking-notification-consent-copy", "tracking-notify-consent");
-  setText("#tracking-notification-submit", "tracking-notify-submit");
   setEyebrow(".extra-copy .eyebrow", "service-more");
   setHeadlineWithAccent(".extra-copy h1", "service-more-title-part-one", "service-more-title-part-two");
   setText(".extra-description", "service-more-description");
-  setText(".extra-whatsapp-button", "service-extra-request");
+  setText(".extra-whatsapp-label", "service-extra-request");
   setText(".extra-note", "service-extra-note");
   setText(".extra-service-card:nth-child(1) span:last-child", "service-card-correspondence");
   setText(".extra-service-card:nth-child(2) span:last-child", "service-card-documents");
@@ -566,10 +564,7 @@ const trackingStages = {
   es: ["En sucursal Turrialba", "En camino", "Recibido"],
   en: ["At Turrialba branch", "In transit", "Received"],
 };
-const trackingStageTypes = {
-  es: ["packaging", "transit", "ready"],
-  en: ["packaging", "transit", "ready"],
-};
+const trackingStageTypes = ["packaging", "transit", "ready"];
 const trackingStatusAliases = {
   es: {
     "en sucursal": "En sucursal Turrialba",
@@ -644,7 +639,7 @@ function renderTrackingOrder(order) {
     }
 
     const marker = document.createElement("span");
-    marker.className = `tracking-step-marker tracking-step-marker--${trackingStageTypes[currentLanguage][index]}`;
+    marker.className = `tracking-step-marker tracking-step-marker--${trackingStageTypes[index]}`;
     marker.setAttribute("aria-hidden", "true");
     const parcel = document.createElement("span");
     parcel.className = "tracking-parcel-icon";

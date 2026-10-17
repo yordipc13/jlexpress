@@ -71,3 +71,9 @@ Las tablas `notificaciones_envio` y `notificaciones_solicitudes`, junto con `man
 - Crear la migración inicial de `public.envios` a partir de ese DDL y probarla en una base de desarrollo, sin recrear ni alterar la tabla de producción.
 - Convertir los scripts operativos a migraciones numeradas, evitando duplicar `consultar_envio` y probando el orden en una base limpia y otra con datos.
 - Registrar el despliegue y la configuración de secretos de las Edge Functions como operaciones separadas de las migraciones SQL.
+
+## Pruebas E2E con IA y navegador
+
+Para validar recorridos completos de la aplicación con un agente de IA y un navegador, usar exclusivamente un entorno local o de staging y archivos de prueba con datos sintéticos. La persona autorizada inicia sesión directamente en el navegador; no compartir credenciales, cargar archivos reales ni ejecutar acciones destructivas en producción.
+
+La preparación, el flujo de importación, los criterios de aceptación y las plantillas de mensaje y prompt están en [Pruebas E2E con IA y navegador](Pruebas-E2E-con-IA.md).

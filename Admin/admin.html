@@ -14,6 +14,13 @@
     <link rel="stylesheet" href="admin.css" />
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script>
+      if (new URLSearchParams(location.search).get('supabase') === 'staging') {
+        if (['localhost', '127.0.0.1'].includes(location.hostname)) {
+          document.write('<script src="../Staging/supabase-config.js"><\/script>');
+        }
+      }
+    </script>
     <script src="js/supabase.js" defer></script>
     <script src="js/admin.js?v=16" defer></script>
   </head>
@@ -131,7 +138,11 @@
               <button class="sort-direction-toggle" id="sort-direction-toggle" type="button" aria-label="Cambiar a orden descendente" title="Orden ascendente">↑</button>
               <span id="view-label">Envíos activos</span>
             </div>
-            <span class="table-hint">Clic derecho sobre una fila para ver acciones</span>
+            <div class="table-meta-end">
+              <button class="button button-danger" id="delete-selected-orders" type="button" hidden>Borrar seleccionados (0)</button>
+              <button class="button button-secondary" id="clear-order-selection" type="button" hidden>Cancelar selección</button>
+              <span class="table-hint">Clic derecho para seleccionar o ver acciones</span>
+            </div>
           </div>
           <div class="table-scroll-top" id="table-scroll-top" aria-hidden="true">
             <div class="table-scroll-spacer" id="table-scroll-spacer"></div>
@@ -160,6 +171,7 @@
     <div class="context-backdrop" id="context-backdrop" hidden></div>
     <div class="context-menu" id="context-menu" role="menu" aria-label="Acciones del registro" hidden>
       <button type="button" role="menuitem" data-action="edit"><span aria-hidden="true">✎</span><span class="context-action-label">Editar envío</span></button>
+      <button type="button" role="menuitem" data-action="select"><span aria-hidden="true">☑</span><span class="context-action-label">Seleccionar pedido</span></button>
       <button type="button" role="menuitem" data-action="status"><span aria-hidden="true">↻</span> Cambiar estado</button>
       <button type="button" role="menuitem" data-action="finalize"><span aria-hidden="true">✓</span><span class="context-action-label">Finalizar pedido</span></button>
       <button type="button" role="menuitem" data-action="reactivate" hidden><span aria-hidden="true">↶</span><span class="context-action-label">Reactivar pedido</span></button>
@@ -308,6 +320,24 @@
         <div class="dialog-actions" id="debug-clear-confirm-actions" hidden>
           <button class="button button-secondary" id="cancel-debug-clear" type="button">Cancelar</button>
           <button class="button button-danger" id="confirm-debug-clear" type="button">Borrar</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog class="users-dialog bulk-delete-dialog" id="bulk-delete-dialog" aria-labelledby="bulk-delete-title">
+      <div class="users-dialog-content">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow"><span></span> CONFIRMAR ELIMINACIÓN</p>
+            <h2 id="bulk-delete-title">¿Deseas eliminar los pedidos seleccionados?</h2>
+          </div>
+          <button class="icon-button" id="close-bulk-delete" type="button" aria-label="Cerrar">×</button>
+        </div>
+        <p class="bulk-delete-message" id="bulk-delete-message"></p>
+        <p class="bulk-delete-error" id="bulk-delete-error" role="alert" aria-live="polite"></p>
+        <div class="dialog-actions">
+          <button class="button button-secondary" id="cancel-bulk-delete" type="button">Cancelar</button>
+          <button class="button button-danger" id="confirm-bulk-delete" type="button">Eliminar pedidos</button>
         </div>
       </div>
     </dialog>

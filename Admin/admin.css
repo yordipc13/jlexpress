@@ -115,10 +115,13 @@ kbd { flex: 0 0 auto; padding: 3px 5px; color: #75818b; background: #f2f5f7; bor
 .select-wrap select { min-width: 155px; height: 39px; padding: 0 30px 0 11px; color: var(--ink); background-color: #fff; border: 1px solid #cfd9e0; border-radius: 4px; font-size: 12px; cursor: pointer; }
 .table-meta { display: flex; min-height: 45px; align-items: center; justify-content: space-between; gap: 15px; padding: 0 18px; color: var(--navy); font-size: 11px; font-weight: 700; }
 .table-meta-start { display: flex; min-width: 0; align-items: center; gap: 9px; }
+.table-meta-end { display: flex; align-items: center; gap: 12px; }
 .sort-direction-toggle { display: inline-grid; width: 27px; height: 27px; flex: 0 0 27px; place-items: center; padding: 0; color: var(--navy); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; font-size: 17px; line-height: 1; cursor: pointer; }
 .sort-direction-toggle:hover { background: var(--canvas); }
 .sort-direction-toggle:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
 .table-hint { color: #89949d; font-size: 10px; font-weight: 400; }
+.table-hint.is-selection-mode { display: inline; }
+.button[hidden] { display: none; }
 .table-scroll-top { height: 14px; max-width: 100%; overflow-x: auto; overflow-y: hidden; border-top: 1px solid #cbd4da; scrollbar-color: #9ba9b2 #eef1f3; scrollbar-width: thin; }
 .table-scroll-spacer { height: 1px; }
 .table-viewport {
@@ -169,6 +172,9 @@ tbody tr { cursor: default; }
 tbody tr:hover td { background: #f2f7fa; }
 tbody tr.is-selected td { color: #fff; background: #176da8; }
 tbody tr.is-selected:hover td { background: #155f94; }
+tbody tr.is-bulk-selected td { color: #173f35; background: #dcefe7; }
+tbody tr.is-bulk-selected:hover td { background: #cce6da; }
+#orders-body.is-selecting tr[data-order-id] { cursor: pointer; }
 tbody tr:last-child td { border-bottom: 0; }
 th:last-child, td:last-child { border-right: 0; }
 th:nth-child(1) { width: 80px; }
@@ -207,6 +213,10 @@ th:nth-child(11) { width: 145px; }
 .route-package-delete-dialog { width: min(410px, calc(100% - 32px)); }
 .route-package-update-dialog { width: min(470px, calc(100% - 32px)); }
 .debug-clear-dialog { width: min(430px, calc(100% - 32px)); }
+.bulk-delete-dialog { width: min(480px, calc(100% - 32px)); }
+.bulk-delete-message { margin: 0; color: var(--ink); font-size: 13px; line-height: 1.55; }
+.bulk-delete-error { margin: 10px 0 0; color: #b63640; font-size: 12px; line-height: 1.5; }
+.bulk-delete-error:empty { display: none; }
 .admin-errors-dialog { width: min(620px, calc(100% - 32px)); }
 .admin-errors-empty { margin: -8px 0 12px; color: var(--muted); font-size: 13px; }
 .admin-errors-empty[hidden] { display: none; }
@@ -294,6 +304,7 @@ h2 { color: var(--navy-deep); font-size: 21px; font-weight: 800; }
   .search-box, .select-wrap { width: 100%; }
   .select-wrap select { width: 100%; }
   .table-meta { min-height: 42px; flex-wrap: wrap; gap: 6px; padding: 7px 10px; font-size: 10px; }
+  .table-meta-end { min-width: 0; flex-wrap: wrap; gap: 8px; }
   .table-footer { flex-direction: column; gap: 5px; padding: 10px; font-size: 10px; line-height: 1.4; overflow-wrap: anywhere; }
   .order-dialog, .users-dialog, .customer-update-dialog { max-height: calc(100dvh - 24px); overflow-y: auto; }
   .order-dialog form, .users-dialog-content, .customer-update-content { padding: 16px; }

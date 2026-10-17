@@ -1,3 +1,5 @@
+export {};
+
 const deno = (globalThis as typeof globalThis & {
 	Deno: {
 		env: { get: (name: string) => string | undefined };
