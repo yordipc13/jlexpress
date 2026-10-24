@@ -193,6 +193,20 @@ function reportAdminError(message) {
   renderAdminErrors();
 }
 
+async function getFunctionErrorMessage(error, fallback) {
+  if (error?.context && typeof error.context.clone === "function") {
+    try {
+      const responseBody = await error.context.clone().json();
+      if (typeof responseBody?.error === "string" && responseBody.error.trim()) {
+        return responseBody.error;
+      }
+    } catch {
+      // Keep the SDK message when the function response is not JSON.
+    }
+  }
+  return error?.message || fallback;
+}
+
 const activityActionLabels = {
   pedido_agregado: "Pedido agregado",
   pedido_editado: "Pedido editado",
@@ -1896,7 +1910,10 @@ adminInviteForm.addEventListener("submit", async (event) => {
     await loadAdminUsers();
   } catch (error) {
     passwordInput.value = "";
-    adminInviteMessage.textContent = error.message || "No se pudo enviar la invitación.";
+    const errorMessage = await getFunctionErrorMessage(error, "No se pudo enviar la invitación.");
+    adminInviteMessage.textContent = errorMessage === "Ya existe una cuenta con ese correo."
+      ? "Ya existe una cuenta con ese correo. Usa “Crear o restablecer contraseña” para completar el acceso."
+      : errorMessage;
     reportAdminError(`No se pudo agregar la cuenta: ${adminInviteMessage.textContent}`);
   } finally {
     adminInviteSubmit.disabled = false;
