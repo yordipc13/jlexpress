@@ -20,3 +20,10 @@
 - **Rastreo público:** `consultar_envio` respondió `200` con `null` para un código ficticio inexistente. Esta llamada incrementó una vez el contador antiabuso de staging; no modificó envíos.
 - **Push en staging:** `notificaciones_push`, `manage-push-subscription` y `send-push-update` no están disponibles en este proyecto (`404`). Las notificaciones push no funcionan ni se consideran verificadas en staging hasta desplegar y configurar esos componentes.
 - **Acceso autenticado:** en esta pasada no se repitió el inicio de sesión ni las operaciones administrativas; el navegador integrado no permitió inspeccionar la sesión. El CRUD y las pruebas RLS autenticadas aprobadas anteriormente permanecen documentadas arriba, pero no se revalidaron en esta pasada.
+
+## Realtime de métricas (23 de octubre de 2026)
+
+- **Entorno:** SQL Editor del proyecto JI Express Staging (`ofxwstrxvaangrqbgajb`), branch `main`.
+- **Cambio:** se agregó `public.envios` a la publicación `supabase_realtime` con una operación condicional. No se modificaron filas de envíos.
+- **Verificación:** la consulta a `pg_catalog.pg_publication_tables` devolvió una fila para `public.envios`.
+- **Registro:** aplicado manualmente desde SQL Editor. La migración idempotente equivalente está en `supabase/migrations/20261023190000_enable_envios_realtime.sql`; la ejecución manual no escribe el historial de migraciones de Supabase.

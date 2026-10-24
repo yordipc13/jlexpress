@@ -48,6 +48,15 @@ const authPanel = document.querySelector("#auth-panel");
 const adminWorkspace = document.querySelector("#admin-workspace");
 const loginForm = document.querySelector("#login-form");
 const authMessage = document.querySelector("#auth-message");
+const authTitle = document.querySelector("#auth-title");
+const authDescription = document.querySelector("#auth-title + .page-description");
+const passwordRecoveryButton = document.querySelector("#password-recovery");
+const passwordSetupForm = document.querySelector("#password-setup-form");
+const passwordSetupMessage = document.querySelector("#password-setup-message");
+const passwordSetupSubmit = document.querySelector("#password-setup-submit");
+const initialAuthTitle = authTitle.textContent;
+const initialAuthDescription = authDescription.textContent;
+let passwordSetupUser = null;
 const loginSubmit = document.querySelector("#login-submit");
 const signOutButton = document.querySelector("#sign-out");
 const refreshOrdersButton = document.querySelector("#refresh-orders");
@@ -135,6 +144,9 @@ let pendingClearCategory = null;
 let pendingBulkDeleteIds = [];
 let presenceInterval = null;
 let usersRefreshInterval = null;
+let shipmentRealtimeChannel = null;
+let shipmentRealtimeRefreshTimer = null;
+let shipmentRealtimeErrorReported = false;
 let presenceUpdateInProgress = false;
 let presenceTrackingEnabled = false;
 let toastAction = null;
@@ -978,6 +990,37 @@ async function loadOrders() {
   }
 }
 
+function stopShipmentRealtimeSubscription() {
+  window.clearTimeout(shipmentRealtimeRefreshTimer);
+  shipmentRealtimeRefreshTimer = null;
+  shipmentRealtimeErrorReported = false;
+  if (shipmentRealtimeChannel && window.supabaseClient) {
+    window.supabaseClient.removeChannel(shipmentRealtimeChannel);
+  }
+  shipmentRealtimeChannel = null;
+}
+
+function startShipmentRealtimeSubscription() {
+  stopShipmentRealtimeSubscription();
+  if (!window.supabaseClient || !STAFF_ROLES.has(currentAdminUser?.app_metadata?.role)) return;
+
+  shipmentRealtimeChannel = window.supabaseClient
+    .channel(`admin-envios-${currentAdminUser.id}`)
+    .on("postgres_changes", { event: "*", schema: "public", table: "envios" }, () => {
+      window.clearTimeout(shipmentRealtimeRefreshTimer);
+      shipmentRealtimeRefreshTimer = window.setTimeout(() => {
+        loadOrders();
+      }, 250);
+    })
+    .subscribe((status) => {
+      if (status === "SUBSCRIBED") shipmentRealtimeErrorReported = false;
+      if (["CHANNEL_ERROR", "TIMED_OUT"].includes(status) && !shipmentRealtimeErrorReported) {
+        shipmentRealtimeErrorReported = true;
+        reportAdminError("La actualización en tiempo real no está disponible.");
+      }
+    });
+}
+
 refreshOrdersButton.addEventListener("click", async () => {
   refreshOrdersButton.disabled = true;
   refreshOrdersButton.setAttribute("aria-busy", "true");
@@ -1196,8 +1239,15 @@ confirmDebugClearButton.addEventListener("click", async () => {
 });
 
 function showLogin(message = "") {
+  stopShipmentRealtimeSubscription();
+  passwordSetupUser = null;
   authPanel.hidden = false;
   adminWorkspace.hidden = true;
+  loginForm.hidden = false;
+  passwordSetupForm.hidden = true;
+  passwordRecoveryButton.hidden = false;
+  authTitle.textContent = initialAuthTitle;
+  authDescription.textContent = initialAuthDescription;
   signOutButton.hidden = true;
   sidebarToggle.hidden = true;
   setAdminSidebarOpen(false);
@@ -1210,8 +1260,93 @@ function showLogin(message = "") {
   renderOrders();
 }
 
+function showPasswordSetup(user) {
+  passwordSetupUser = user;
+  authPanel.hidden = false;
+  adminWorkspace.hidden = true;
+  loginForm.hidden = true;
+  passwordSetupForm.hidden = false;
+  passwordRecoveryButton.hidden = true;
+  authTitle.textContent = "Completa tu cuenta";
+  authDescription.textContent = `Crea una contraseña para ${user.email || "tu cuenta"}.`;
+  passwordSetupMessage.textContent = "";
+  passwordSetupForm.reset();
+  document.querySelector("#new-password").focus();
+}
+
+function redirectAfterPasswordSetup(role) {
+  const destination = role === "repartidor" ? "repartidor.html" : "admin.html";
+  const target = new URL(destination, window.location.href);
+  const searchParams = new URLSearchParams(window.location.search);
+  searchParams.delete("password_setup");
+  target.search = searchParams.toString();
+  window.location.replace(target.href);
+}
+
+passwordRecoveryButton.addEventListener("click", async () => {
+  const emailInput = loginForm.querySelector('[name="email"]');
+  const email = emailInput.value.trim();
+  authMessage.textContent = "";
+  if (!email || !emailInput.checkValidity()) {
+    authMessage.textContent = "Escribe un correo válido para recibir el enlace.";
+    emailInput.focus();
+    return;
+  }
+
+  passwordRecoveryButton.disabled = true;
+  try {
+    const redirectUrl = new URL("admin.html", window.location.href);
+    const searchParams = new URLSearchParams(window.location.search);
+    searchParams.set("password_setup", "1");
+    redirectUrl.search = searchParams.toString();
+    const { error } = await window.supabaseClient.auth.resetPasswordForEmail(email, {
+      redirectTo: redirectUrl.href,
+    });
+    if (error) throw error;
+    authMessage.textContent = "Si la cuenta existe, recibirás un enlace para configurar la contraseña.";
+  } catch (error) {
+    authMessage.textContent = error.message || "No se pudo enviar el enlace.";
+  } finally {
+    passwordRecoveryButton.disabled = false;
+  }
+});
+
+passwordSetupForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!passwordSetupUser) return;
+
+  const password = passwordSetupForm.elements.password.value;
+  const confirmPassword = passwordSetupForm.elements["confirm-password"].value;
+  if (password !== confirmPassword) {
+    passwordSetupMessage.textContent = "Las contraseñas no coinciden.";
+    return;
+  }
+
+  passwordSetupSubmit.disabled = true;
+  passwordSetupMessage.textContent = "";
+  try {
+    const { data, error } = await window.supabaseClient.auth.updateUser({ password });
+    if (error) throw error;
+    const user = data.user || passwordSetupUser;
+    passwordSetupForm.reset();
+    redirectAfterPasswordSetup(user.app_metadata?.role);
+  } catch (error) {
+    passwordSetupMessage.textContent = error.message || "No se pudo guardar la contraseña.";
+  } finally {
+    passwordSetupSubmit.disabled = false;
+  }
+});
+
 async function startAdminSession(session) {
   const role = session?.user?.app_metadata?.role;
+  if (new URLSearchParams(window.location.search).get("password_setup") === "1") {
+    if (!STAFF_ROLES.has(role) && role !== "repartidor") {
+      showLogin("La invitación no tiene un rol válido. Contacta a un administrador.");
+      return;
+    }
+    showPasswordSetup(session.user);
+    return;
+  }
   if (role === "repartidor") {
     const courierUrl = new URL("repartidor.html", window.location.href);
     courierUrl.search = window.location.search;
@@ -1237,6 +1372,7 @@ async function startAdminSession(session) {
   openAdminInviteButton.hidden = true;
   openAdminUserDeleteButton.hidden = true;
   currentAdminUser = session.user;
+  startShipmentRealtimeSubscription();
   await loadOrders();
   try {
     await updateAdminPresence();
@@ -1949,6 +2085,15 @@ function renderOrders() {
   document.querySelector("#result-count").textContent = isHistoryView
     ? `${visibleOrders.length} ${visibleOrders.length === 1 ? "registro" : "registros"}`
     : formatCount(visibleOrders.length);
+  document.querySelector("#metric-at-branch").textContent = String(orders.filter((order) =>
+    ["en sucursal", "empaquetando"].includes(normalizeOrderStatus(order.estado))
+  ).length);
+  document.querySelector("#metric-in-transit").textContent = String(orders.filter((order) =>
+    ["en camino", "en transito"].includes(normalizeOrderStatus(order.estado))
+  ).length);
+  document.querySelector("#metric-finished").textContent = String(orders.filter((order) =>
+    isShipmentStatusFinal(order.estado)
+  ).length);
   document.querySelector("#view-label").textContent = isRouteView
     ? "Datos de ruta"
     : isCompanyThreeView
@@ -3636,7 +3781,8 @@ async function restoreAdminSession() {
       if (!userData.user) throw new Error("La sesión no tiene una cuenta activa.");
       await startAdminSession({ ...data.session, user: userData.user });
     } else {
-      showLogin();
+      const isPasswordSetup = new URLSearchParams(window.location.search).get("password_setup") === "1";
+      showLogin(isPasswordSetup ? "El enlace venció o ya fue utilizado. Solicita uno nuevo para configurar tu contraseña." : "");
     }
   } catch (error) {
     const message = `No se pudo verificar la sesión: ${error.message || "Error desconocido."}`;

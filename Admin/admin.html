@@ -22,7 +22,7 @@
       }
     </script>
     <script src="js/supabase.js" defer></script>
-    <script src="js/admin.js?v=26" defer></script>
+    <script src="js/admin.js?v=27" defer></script>
   </head>
   <body>
     <div class="admin-shell">
@@ -79,6 +79,17 @@
             <p class="auth-message" id="auth-message" role="status" aria-live="polite"></p>
             <button class="button button-primary" id="login-submit" type="submit">Iniciar sesión</button>
           </form>
+          <button class="auth-link" id="password-recovery" type="button">Crear o restablecer contraseña</button>
+          <form id="password-setup-form" hidden>
+            <label class="form-field" for="new-password">Nueva contraseña
+              <input id="new-password" name="password" type="password" autocomplete="new-password" minlength="8" required />
+            </label>
+            <label class="form-field" for="confirm-new-password">Confirma la contraseña
+              <input id="confirm-new-password" name="confirm-password" type="password" autocomplete="new-password" minlength="8" required />
+            </label>
+            <p class="auth-message" id="password-setup-message" role="status" aria-live="polite"></p>
+            <button class="button button-primary" id="password-setup-submit" type="submit">Guardar contraseña</button>
+          </form>
         </section>
       </main>
 
@@ -89,9 +100,16 @@
             <h1 id="page-title">Envíos</h1>
             <p class="page-description">Consulta y administra los envíos de JL Express.</p>
           </div>
-          <div class="order-count" aria-live="polite">
-            <span class="count-dot" aria-hidden="true"></span>
-            <span id="result-count">0 envíos</span>
+          <div class="order-count">
+            <div class="order-count-primary" aria-live="polite">
+              <span class="count-dot" aria-hidden="true"></span>
+              <span id="result-count">0 envíos</span>
+            </div>
+            <div class="order-count-metrics" role="group" aria-label="Resumen de envíos">
+              <span><strong id="metric-at-branch">0</strong> en sucursal</span>
+              <span><strong id="metric-in-transit">0</strong> en camino</span>
+              <span><strong id="metric-finished">0</strong> finalizados</span>
+            </div>
           </div>
         </section>
 

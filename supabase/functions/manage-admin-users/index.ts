@@ -329,7 +329,9 @@ async function recordAdminActivity(
 
 async function inviteAccount(configuration: ReturnType<typeof getConfiguration>, email: string, role: string) {
   const inviteUrl = new URL("/auth/v1/invite", configuration.url);
-  inviteUrl.searchParams.set("redirect_to", `${siteUrl}/Admin/admin.html`);
+  const redirectUrl = new URL("/Admin/admin.html", siteUrl);
+  redirectUrl.searchParams.set("password_setup", "1");
+  inviteUrl.searchParams.set("redirect_to", redirectUrl.href);
   const inviteResponse = await fetch(inviteUrl, {
     method: "POST",
     headers: { ...serviceHeaders(configuration.serviceRoleKey), "Content-Type": "application/json" },
