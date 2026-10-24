@@ -14,6 +14,8 @@ const trackingNotification = document.querySelector("#tracking-notification");
 const trackingNotificationPrompt = document.querySelector("#tracking-notification-prompt");
 const trackingNotificationForm = document.querySelector("#tracking-notification-form");
 const trackingNotificationConsent = document.querySelector("#tracking-notification-consent");
+const trackingNotificationEmail = document.querySelector("#tracking-notification-email");
+const trackingNotificationEmailConsent = document.querySelector("#tracking-notification-email-consent");
 const trackingNotificationSubmit = document.querySelector("#tracking-notification-submit");
 const trackingNotificationMessage = document.querySelector("#tracking-notification-message");
 const VAPID_PUBLIC_KEY = "BM04QKN5xpudplpDvyu-AM1Jux-bv-SDIl1vAJsp1-fvulNWr3Lm3tHG5rIg1MO99CMcBDjF81uHZwuNM78Mp3k";
@@ -51,12 +53,20 @@ const appText = {
     "tracking-empty-state": "Aquí aparecerá el estado de tu pedido.",
     "tracking-no-result": "No encontramos un pedido con ese código. Verifica los datos e inténtalo de nuevo.",
     "tracking-notify-question": "¿Quieres recibir actualizaciones?",
-    "tracking-notify-copy": "Recibirás una notificación en este dispositivo cada vez que cambie el estado de este paquete. En iPhone, primero añade JL Express a tu pantalla de inicio.",
+    "tracking-notify-copy": "Elige si quieres recibir los cambios de estado por correo electrónico, mediante notificaciones push en este dispositivo o por ambos medios.",
     "tracking-notify-yes": "Sí, avisarme",
     "tracking-notify-no": "Ahora no",
-    "tracking-notify-submit": "Activar notificaciones",
-    "tracking-notify-activating": "Activando las notificaciones…",
-    "tracking-notify-active": "Las notificaciones quedaron activadas en este dispositivo.",
+    "tracking-notify-submit": "Guardar preferencias",
+    "tracking-notify-activating": "Guardando tus preferencias…",
+    "tracking-notify-active": "Tus preferencias de notificación quedaron guardadas.",
+    "tracking-notify-email-label": "Correo electrónico",
+    "tracking-notify-email-placeholder": "nombre@ejemplo.com",
+    "tracking-notify-email-consent": "Acepto recibir correos cuando cambie el estado de este envío. Puedo cancelar los avisos desde el correo recibido.",
+    "tracking-notify-email-required": "Escribe un correo válido y acepta recibir avisos por correo.",
+    "tracking-notify-selection-required": "Selecciona al menos un medio de notificación y acepta su consentimiento.",
+    "tracking-notify-email-pending": "Revisa tu correo y confirma la suscripción.",
+    "tracking-notify-email-active": "El correo ya estaba suscrito a este envío.",
+    "tracking-notify-push-active": "Las notificaciones push quedaron activadas en este dispositivo.",
     "tracking-notify-consent": "Acepto recibir notificaciones push en este dispositivo sobre los cambios de estado de este envío. Puedo desactivarlas desde la configuración del navegador.",
     "tracking-notify-consent-required": "Acepta recibir notificaciones push para continuar.",
     "tracking-notify-denied": "El permiso fue bloqueado. Cámbialo en la configuración de notificaciones de tu navegador.",
@@ -95,27 +105,33 @@ const appText = {
     "terms": "Términos y condiciones",
     "privacy-eyebrow": "AVISO DE PRIVACIDAD",
     "privacy-title": "Cómo tratamos tus datos",
-    "privacy-intro": "JL Express es un servicio de mensajería con sede en Turrialba, Costa Rica. Este aviso explica cómo tratamos los datos al visitar el sitio, consultar envíos y activar notificaciones push.",
+    "privacy-intro": "JLEXPRESS (JL Express) es responsable del tratamiento de los datos gestionados mediante este sitio y sus servicios de mensajería en Costa Rica. Para consultas sobre privacidad, escribe a jlexpressturrialba@gmail.com.",
+    "privacy-data-title": "Datos y finalidades",
+    "privacy-data-copy": "Tratamos los códigos de seguimiento y estados para localizar y dar seguimiento a los envíos. Para administrar la entrega, también podemos tratar el nombre, teléfono y dirección o ubicación facilitados para el servicio. Usamos estos datos para organizar la operación, atender consultas y reclamos, y mantener la información del pedido actualizada. El rastreo público muestra únicamente el código, el estado y la fecha de actualización.",
     "privacy-tracking-title": "Rastreo y protección del servicio",
     "privacy-tracking-copy": "Al consultar un envío, el código se contrasta con los registros de envíos almacenados en Supabase, nuestro proveedor de base de datos. La respuesta pública muestra el código, el estado y la última actualización. Para limitar consultas automatizadas, el sistema usa la IP recibida de Cloudflare y guarda un HMAC, no la IP en claro; el límite es de 20 consultas por minuto.",
-    "privacy-push-title": "Notificaciones push opcionales",
-    "privacy-push-copy": "Solo si aceptas y otorgas permiso al navegador se guarda, para este dispositivo, el código del envío, el endpoint y las claves técnicas de la suscripción, además de la fecha de consentimiento. Se usan únicamente para avisarte de cambios de estado mediante notificaciones push; no son avisos por correo ni SMS. La suscripción se elimina cuando el pedido se completa o el servicio detecta un endpoint vencido. Puedes revocar el permiso en la configuración del navegador.",
+    "privacy-push-title": "Avisos opcionales por correo y push",
+    "privacy-push-copy": "Los avisos son opcionales. Para correo, guardamos la dirección, el código del envío y las fechas de consentimiento y confirmación; debes confirmar la dirección y puedes cancelar desde el enlace del mensaje. Los correos se envían mediante Gmail. Para push, guardamos el código, el endpoint y las claves técnicas de la suscripción en el dispositivo; el navegador y su servicio de notificaciones intervienen en la entrega. Las suscripciones push se eliminan al marcarse el envío como entregado/listo para recoger o si el endpoint vence. La suscripción por correo permanece activa hasta que la canceles; el registro de cancelación puede conservarse para dejar constancia de tu solicitud.",
+    "privacy-providers-title": "Proveedores y comunicaciones",
+    "privacy-providers-copy": "Usamos Supabase para la base de datos y funciones del sitio, Gmail para enviar avisos por correo y Cloudflare para recibir la dirección IP necesaria para limitar consultas automatizadas de rastreo. Para proteger el servicio, se conserva un HMAC de esa IP, no la dirección en texto claro; los registros de limitación antiguos se depuran periódicamente. Si nos contactas por WhatsApp, Meta procesa esa comunicación conforme a sus propias condiciones y aviso de privacidad. Estos proveedores pueden tratar datos en servidores fuera de Costa Rica.",
     "privacy-browser-title": "Almacenamiento en el navegador",
     "privacy-browser-copy": "El sitio guarda localmente tus preferencias de idioma y tema, y si ya respondiste a la invitación de notificaciones para un código. El código del sitio no integra una herramienta propia de analítica.",
     "privacy-retention-title": "Conservación y consultas",
-    "privacy-retention-copy": "Los registros de envíos se conservan durante el tiempo necesario para prestar y dar seguimiento al servicio, y según las obligaciones aplicables. Para consultas o solicitudes relacionadas con tus datos, utiliza el botón Soporte del sitio.",
+    "privacy-retention-copy": "Los datos operativos se utilizan mientras el envío está en gestión y hasta su entrega. Marcar un pedido como entregado no elimina automáticamente su registro; los datos pueden conservarse después para atender consultas o reclamos, proteger el servicio o cumplir obligaciones legales. Puedes solicitar acceso, corrección o eliminación escribiendo a JL Express; atenderemos la solicitud conforme a la normativa aplicable y a las obligaciones de conservación. Para consultas sobre tus datos, utiliza también este contacto:",
     "terms-eyebrow": "TÉRMINOS Y CONDICIONES",
     "terms-title": "Uso del sitio y coordinación de envíos",
-    "terms-intro": "Estos términos cubren el uso del sitio de JL Express para consultar el estado de envíos y solicitar servicios de mensajería, entregas o mandados. Cada servicio se coordina por separado mediante WhatsApp.",
+    "terms-intro": "Estos términos regulan el uso del sitio de JL Express (JLEXPRESS) para consultar el estado de pedidos y solicitar servicios de mensajería en Costa Rica. Los pedidos extra y sus condiciones se coordinan por WhatsApp.",
+    "terms-service-title": "Servicio y responsabilidad",
+    "terms-service-copy": "La gestión de JL Express comienza cuando el paquete está disponible para ser recogido por la empresa y es aceptado para su traslado. El servicio se presta hasta la entrega al destinatario o hasta que el paquete quede disponible para retiro, según lo coordinado. Si surge un problema, comunícate con soporte e indica el código de seguimiento para que podamos revisar el caso. La atención y responsabilidad se rigen por las condiciones confirmadas para cada servicio y la legislación aplicable en Costa Rica; estos términos no excluyen derechos ni responsabilidades que la ley no permita excluir.",
     "terms-quotes-title": "Tarifas y entrega",
-    "terms-quotes-copy": "La disponibilidad, el precio, el alcance y los detalles de cada entrega o pedido se coordinan directamente por WhatsApp. El sitio no publica tarifas ni plazos generales de entrega. Revisa y acuerda las condiciones con JL Express antes de confirmar una solicitud.",
+    "terms-quotes-copy": "La disponibilidad, tarifa, destino, forma de entrega y plazo estimado de cada pedido extra se acuerdan por WhatsApp antes de confirmar la solicitud. No hay tarifas ni plazos generales publicados en el sitio. Sigue las instrucciones de entrega que JL Express confirme para tu pedido.",
     "terms-tracking-title": "Rastreo del pedido",
     "terms-tracking-copy": "Ingresa únicamente un código de seguimiento que estés autorizado a consultar y evita compartirlo públicamente. JL Express actualiza el estado del envío en el sistema; la información puede tardar en reflejar un cambio y no constituye por sí sola una confirmación de entrega.",
-    "terms-push-title": "Notificaciones y uso permitido",
-    "terms-push-copy": "Las notificaciones push son opcionales, requieren tu consentimiento y se envían a este dispositivo cuando cambia el estado del envío. Dependen del navegador, el dispositivo y la conexión; puedes retirar el permiso desde la configuración del navegador. Para proteger el rastreo, se permiten hasta 20 consultas por minuto y por IP; los excesos pueden recibir una respuesta temporal HTTP 429.",
+    "terms-push-title": "Avisos y uso permitido",
+    "terms-push-copy": "Los avisos por correo y las notificaciones push son opcionales y requieren tu consentimiento. El correo debe confirmarse y puede cancelarse desde el mensaje; push depende del navegador, el dispositivo y la conexión, y puedes retirar el permiso desde su configuración. Para proteger el rastreo, se permiten hasta 20 consultas por minuto y por IP; los excesos pueden recibir una respuesta temporal HTTP 429.",
     "terms-rights-title": "Derechos y contacto",
-    "terms-rights-copy": "Estos términos no limitan los derechos que te correspondan conforme a la normativa aplicable en Costa Rica. Para reportar un extravío u otro problema con un envío, o para hacer una consulta, utiliza el botón Soporte del sitio. Las condiciones de cada servicio se coordinan por WhatsApp.",
-    "legal-updated": "Actualizado: 15 de octubre de 2026.",
+    "terms-rights-copy": "Proporciona información correcta para coordinar la entrega y consulta únicamente códigos de seguimiento que estés autorizado a usar. Las notificaciones por correo y push son opcionales y requieren consentimiento; puedes cancelar el correo desde el mensaje o desactivar push en el navegador. Para dudas, reclamos o solicitudes sobre tus datos, contacta a soporte por WhatsApp o escribe a jlexpressturrialba@gmail.com. Estos términos se aplican sin perjuicio de los derechos que reconoce la normativa costarricense.",
+    "legal-updated": "Actualizado: 23 de octubre de 2026.",
     "service-more": "MÁS SERVICIOS PARA TI",
     "service-more-title-part-one": "¿Necesitas enviar algo",
     "service-more-title-part-two": "más?",
@@ -164,12 +180,20 @@ const appText = {
     "tracking-empty-state": "Your order status will appear here.",
     "tracking-no-result": "We could not find an order with that code. Please check the details and try again.",
     "tracking-notify-question": "Want to receive updates?",
-    "tracking-notify-copy": "You will receive a notification on this device each time this package changes status. On iPhone, add JL Express to your Home Screen first.",
+    "tracking-notify-copy": "Choose whether to receive status changes by email, as push notifications on this device, or both.",
     "tracking-notify-yes": "Yes, notify me",
     "tracking-notify-no": "Not now",
-    "tracking-notify-submit": "Enable notifications",
-    "tracking-notify-activating": "Enabling notifications…",
-    "tracking-notify-active": "Notifications are now enabled on this device.",
+    "tracking-notify-submit": "Save preferences",
+    "tracking-notify-activating": "Saving your preferences…",
+    "tracking-notify-active": "Your notification preferences have been saved.",
+    "tracking-notify-email-label": "Email address",
+    "tracking-notify-email-placeholder": "name@example.com",
+    "tracking-notify-email-consent": "I agree to receive emails when this shipment's status changes. I can cancel these updates from the email.",
+    "tracking-notify-email-required": "Enter a valid email address and agree to receive email updates.",
+    "tracking-notify-selection-required": "Select at least one notification method and accept its consent.",
+    "tracking-notify-email-pending": "Check your inbox and confirm the subscription.",
+    "tracking-notify-email-active": "This email is already subscribed to this shipment.",
+    "tracking-notify-push-active": "Push notifications are enabled on this device.",
     "tracking-notify-consent": "I agree to receive push notifications on this device about this shipment's status changes. I can turn them off in my browser settings.",
     "tracking-notify-consent-required": "Accept push notifications to continue.",
     "tracking-notify-denied": "Permission was blocked. Change it in your browser's notification settings.",
@@ -208,27 +232,33 @@ const appText = {
     "terms": "Terms and conditions",
     "privacy-eyebrow": "PRIVACY NOTICE",
     "privacy-title": "How we handle your data",
-    "privacy-intro": "JL Express is a courier service based in Turrialba, Costa Rica. This notice explains how we handle data when you visit the site, track shipments, and enable push notifications.",
+    "privacy-intro": "JLEXPRESS (JL Express) is responsible for processing data handled through this site and its courier services in Costa Rica. For privacy questions, email jlexpressturrialba@gmail.com.",
+    "privacy-data-title": "Data and purposes",
+    "privacy-data-copy": "We process tracking codes and shipment statuses to locate and track shipments. To manage delivery, we may also process the name, phone number, and delivery address or location provided for the service. We use this information to organize operations, handle questions and claims, and keep shipment details current. Public tracking displays only the code, status, and update date.",
     "privacy-tracking-title": "Tracking and service protection",
     "privacy-tracking-copy": "When you track a shipment, the code is checked against shipment records stored in Supabase, our database provider. The public response shows the code, status, and last update. To limit automated queries, the system uses the IP address received from Cloudflare and stores an HMAC, not the IP address in plain text; the limit is 20 queries per minute.",
-    "privacy-push-title": "Optional push notifications",
-    "privacy-push-copy": "Only if you agree and grant browser permission are the shipment code, subscription endpoint, technical subscription keys, and consent date stored for this device. They are used only to notify you of status changes by push notification, not by email or SMS. The subscription is removed when the shipment is completed or the service detects an expired endpoint. You can revoke permission in your browser settings.",
+    "privacy-push-title": "Optional email and push updates",
+    "privacy-push-copy": "Updates are optional. For email, we store the address, shipment code, and consent and confirmation dates; you must confirm the address and can unsubscribe using the message link. Emails are sent through Gmail. For push, we store the code, endpoint, and technical subscription keys for the device; the browser and its notification service participate in delivery. Push subscriptions are deleted when a shipment is marked delivered/ready for pickup or the endpoint expires. Email subscriptions remain active until you cancel them; cancellation records may be retained to document your request.",
+    "privacy-providers-title": "Providers and communications",
+    "privacy-providers-copy": "We use Supabase for the site's database and functions, Gmail to send email updates, and Cloudflare to receive the IP address needed to limit automated tracking queries. To protect the service, we retain an HMAC of that IP, not the address in plain text; old rate-limit records are periodically purged. If you contact us through WhatsApp, Meta processes that communication under its own terms and privacy notice. These providers may process data on servers outside Costa Rica.",
     "privacy-browser-title": "Browser storage",
     "privacy-browser-copy": "The site stores your language and theme preferences, and whether you have already responded to the push-notification prompt for a tracking code, in your browser's local storage. The site code does not include its own analytics tool.",
     "privacy-retention-title": "Retention and requests",
-    "privacy-retention-copy": "Shipment records are kept for as long as needed to provide and track the service, and as required by applicable obligations. For questions or requests about your data, use the Support button on the site.",
+    "privacy-retention-copy": "Operational data is used while a shipment is being handled and until delivery. Marking an order as delivered does not automatically delete its record; data may be retained afterward to handle questions or claims, protect the service, or meet legal obligations. You may request access, correction, or deletion by emailing JL Express; requests will be handled under applicable law and retention obligations. You may also use this contact for privacy questions:",
     "terms-eyebrow": "TERMS AND CONDITIONS",
     "terms-title": "Using this site and coordinating shipments",
-    "terms-intro": "These terms cover use of the JL Express website to check shipment status and request courier, delivery, or errand services. Each service is coordinated separately through WhatsApp.",
+    "terms-intro": "These terms govern use of the JL Express (JLEXPRESS) website to check order status and request courier services in Costa Rica. Extra requests and their conditions are coordinated through WhatsApp.",
+    "terms-service-title": "Service and responsibility",
+    "terms-service-copy": "JL Express begins handling a package when it is available for collection by the company and accepted for transport. The service continues until delivery to the recipient or until the package is available for pickup, as coordinated. If a problem arises, contact support and provide the tracking code so we can review the case. Service handling and responsibility are governed by the conditions confirmed for each service and applicable Costa Rican law; these terms do not exclude rights or responsibilities that may not legally be excluded.",
     "terms-quotes-title": "Fees and delivery",
-    "terms-quotes-copy": "Availability, price, scope, and delivery details for each request are coordinated directly through WhatsApp. The site does not publish general rates or delivery timeframes. Review and agree on the conditions with JL Express before confirming a request.",
+    "terms-quotes-copy": "Availability, fee, destination, delivery method, and estimated timeframe for each extra request are agreed through WhatsApp before the request is confirmed. The site does not publish general rates or timeframes. Follow the delivery instructions JL Express confirms for your order.",
     "terms-tracking-title": "Shipment tracking",
     "terms-tracking-copy": "Only enter a tracking code you are authorized to use, and avoid sharing it publicly. JL Express updates shipment status in the system; information may take time to reflect a change and is not, by itself, confirmation of delivery.",
-    "terms-push-title": "Notifications and acceptable use",
-    "terms-push-copy": "Push notifications are optional, require your consent, and are sent to this device when the shipment status changes. They depend on your browser, device, and connection; you can revoke permission in your browser settings. To protect tracking, up to 20 queries per minute per IP are allowed; excess requests may receive a temporary HTTP 429 response.",
+    "terms-push-title": "Updates and acceptable use",
+    "terms-push-copy": "Email and push updates are optional and require your consent. Email must be confirmed and can be canceled from the message; push depends on your browser, device, and connection, and you can withdraw permission in browser settings. To protect tracking, up to 20 queries per minute per IP are allowed; excess requests may receive a temporary HTTP 429 response.",
     "terms-rights-title": "Rights and contact",
-    "terms-rights-copy": "These terms do not limit any rights you have under applicable Costa Rican law. To report a missing shipment or another issue, or to ask a question, use the Support button on the site. Service conditions are coordinated through WhatsApp.",
-    "legal-updated": "Updated: October 15, 2026.",
+    "terms-rights-copy": "Provide accurate information to coordinate delivery and only check tracking codes you are authorized to use. Email and push updates are optional and require consent; you can unsubscribe from the email or disable push in your browser. For questions, claims, or data requests, contact support through WhatsApp or email jlexpressturrialba@gmail.com. These terms apply without prejudice to rights under Costa Rican law.",
+    "legal-updated": "Updated: October 23, 2026.",
     "service-more": "MORE SERVICES FOR YOU",
     "service-more-title-part-one": "Need to send something",
     "service-more-title-part-two": "else?",
@@ -324,6 +354,9 @@ function applyLanguage(language) {
   setText("#tracking-notification-yes", "tracking-notify-yes");
   setText("#tracking-notification-no", "tracking-notify-no");
   setText("#tracking-notification-consent-copy", "tracking-notify-consent");
+  setText("#tracking-notification-email-label", "tracking-notify-email-label");
+  setText("#tracking-notification-email", "tracking-notify-email-placeholder", true);
+  setText("#tracking-notification-email-consent-copy", "tracking-notify-email-consent");
   setEyebrow(".extra-copy .eyebrow", "service-more");
   setHeadlineWithAccent(".extra-copy h1", "service-more-title-part-one", "service-more-title-part-two");
   setText(".extra-description", "service-more-description");
@@ -697,6 +730,8 @@ function showTrackingNotificationPrompt(trackingCode) {
   if (notificationWasHandled(trackingCode)) return;
   currentTrackingCode = trackingCode;
   trackingNotificationConsent.checked = false;
+  trackingNotificationEmailConsent.checked = false;
+  trackingNotificationEmail.value = "";
   trackingNotification.hidden = false;
   trackingNotificationPrompt.hidden = false;
   trackingNotificationForm.hidden = true;
@@ -724,49 +759,34 @@ trackingNotificationSubmit.addEventListener("click", async () => {
   trackingNotificationSubmit.disabled = true;
   trackingNotificationMessage.textContent = getText("tracking-notify-activating");
   try {
-    if (!trackingNotificationConsent.checked) {
-      throw new Error(getText("tracking-notify-consent-required"));
-    }
-    if (!window.Notification || !("serviceWorker" in navigator) || !("PushManager" in window)) {
-      throw new Error(getText("tracking-notify-unsupported"));
-    }
     if (!window.supabaseClient || typeof window.supabaseClient.functions?.invoke !== "function") {
       throw new Error(getText("tracking-notify-unavailable"));
     }
 
-    const permission = Notification.permission === "default"
-      ? await Notification.requestPermission()
-      : Notification.permission;
-    if (permission !== "granted") throw new Error(getText("tracking-notify-denied"));
-
-    const registration = await navigator.serviceWorker.register("/sw.js");
-    await navigator.serviceWorker.ready;
-    const applicationServerKey = decodeVapidPublicKey(VAPID_PUBLIC_KEY);
-    let subscription = await registration.pushManager.getSubscription();
-    if (subscription && !sameApplicationServerKey(subscription.options.applicationServerKey, applicationServerKey)) {
-      await subscription.unsubscribe();
-      subscription = null;
+    const wantsEmail = trackingNotificationEmailConsent.checked;
+    const wantsPush = trackingNotificationConsent.checked;
+    if (!wantsEmail && !wantsPush) {
+      throw new Error(getText("tracking-notify-selection-required"));
     }
-    if (!subscription) {
-      subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey,
-      });
+    if (wantsEmail && (!trackingNotificationEmail.validity.valid || !trackingNotificationEmail.value.trim())) {
+      trackingNotificationEmail.focus();
+      throw new Error(getText("tracking-notify-email-required"));
     }
 
-    const { error } = await window.supabaseClient.functions.invoke("manage-push-subscription", {
-      body: {
-        action: "subscribe",
-        tracking_code: currentTrackingCode,
-        consent: trackingNotificationConsent.checked,
-        subscription: subscription.toJSON(),
-      },
+    const subscriptions = [];
+    if (wantsPush) subscriptions.push({ method: "push", promise: subscribeToPushNotifications() });
+    if (wantsEmail) subscriptions.push({ method: "email", promise: subscribeToEmailNotifications() });
+    const results = await Promise.allSettled(subscriptions.map(({ promise }) => promise));
+    const messages = results.map((result, index) => {
+      if (result.status === "rejected") return result.reason?.message || "No se pudo guardar una preferencia.";
+      return getText(subscriptions[index].method === "push" ? "tracking-notify-push-active" : result.value);
     });
-    if (error) throw error;
+    trackingNotificationMessage.textContent = messages.join(" ");
 
-    markNotificationHandled(currentTrackingCode);
-    trackingNotificationForm.hidden = true;
-    trackingNotificationMessage.textContent = getText("tracking-notify-active");
+    if (results.every((result) => result.status === "fulfilled")) {
+      markNotificationHandled(currentTrackingCode);
+      trackingNotificationForm.hidden = true;
+    }
   } catch (error) {
     let message = error?.message || "No se pudo activar el aviso. Inténtalo de nuevo.";
     if (error?.context instanceof Response) {
@@ -789,6 +809,55 @@ trackingNotificationSubmit.addEventListener("click", async () => {
     trackingNotificationSubmit.disabled = false;
   }
 });
+
+async function subscribeToEmailNotifications() {
+  const { data, error } = await window.supabaseClient.functions.invoke("manage-tracking-subscription", {
+    body: {
+      action: "subscribe",
+      tracking_code: currentTrackingCode,
+      email: trackingNotificationEmail.value.trim(),
+      consent: true,
+    },
+  });
+  if (error) throw error;
+  return data?.status === "already_active" ? "tracking-notify-email-active" : "tracking-notify-email-pending";
+}
+
+async function subscribeToPushNotifications() {
+  if (!window.Notification || !("serviceWorker" in navigator) || !("PushManager" in window)) {
+    throw new Error(getText("tracking-notify-unsupported"));
+  }
+
+  const permission = Notification.permission === "default"
+    ? await Notification.requestPermission()
+    : Notification.permission;
+  if (permission !== "granted") throw new Error(getText("tracking-notify-denied"));
+
+  const registration = await navigator.serviceWorker.register("/sw.js");
+  await navigator.serviceWorker.ready;
+  const applicationServerKey = decodeVapidPublicKey(VAPID_PUBLIC_KEY);
+  let subscription = await registration.pushManager.getSubscription();
+  if (subscription && !sameApplicationServerKey(subscription.options.applicationServerKey, applicationServerKey)) {
+    await subscription.unsubscribe();
+    subscription = null;
+  }
+  if (!subscription) {
+    subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey,
+    });
+  }
+
+  const { error } = await window.supabaseClient.functions.invoke("manage-push-subscription", {
+    body: {
+      action: "subscribe",
+      tracking_code: currentTrackingCode,
+      consent: trackingNotificationConsent.checked,
+      subscription: subscription.toJSON(),
+    },
+  });
+  if (error) throw error;
+}
 
 function decodeVapidPublicKey(value) {
   const padding = "=".repeat((4 - value.length % 4) % 4);

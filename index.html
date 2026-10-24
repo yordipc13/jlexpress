@@ -225,6 +225,23 @@
               </div>
             </div>
             <div id="tracking-notification-form" hidden>
+              <label class="tracking-notification-field" for="tracking-notification-email">
+                <span id="tracking-notification-email-label">Correo electrónico</span>
+                <input
+                  id="tracking-notification-email"
+                  name="email"
+                  type="email"
+                  autocomplete="email"
+                  maxlength="254"
+                  placeholder="nombre@ejemplo.com"
+                />
+              </label>
+              <label class="tracking-notification-consent">
+                <input id="tracking-notification-email-consent" name="email-consent" type="checkbox" />
+                <span id="tracking-notification-email-consent-copy">
+                  Acepto recibir correos cuando cambie el estado de este envío. Puedo cancelar los avisos desde el correo recibido.
+                </span>
+              </label>
               <label class="tracking-notification-consent">
                 <input id="tracking-notification-consent" name="consent" type="checkbox" />
                 <span id="tracking-notification-consent-copy">
@@ -232,7 +249,7 @@
                   estado de este envío. Puedo desactivarlas desde la configuración del navegador.
                 </span>
               </label>
-              <button class="tracking-notification-yes" id="tracking-notification-submit" type="button">Activar notificaciones</button>
+              <button class="tracking-notification-yes" id="tracking-notification-submit" type="button">Guardar preferencias</button>
             </div>
             <p class="tracking-notification-message" id="tracking-notification-message" role="status"></p>
           </section>
@@ -376,19 +393,19 @@
                 </span>
                 <span class="contact-option-arrow" aria-hidden="true">↗</span>
               </a>
-              <a class="contact-option" href="tel:+50662818796">
+              <a class="contact-option" href="tel:+50662818798">
                 <span class="contact-option-icon" aria-hidden="true">☎</span>
                 <span>
                   <small class="contact-option-call-label">Llámanos</small>
-                  <strong>+506 6281-8796</strong>
+                  <strong>+506 6281-8798</strong>
                 </span>
                 <span class="contact-option-arrow" aria-hidden="true">↗</span>
               </a>
-              <a class="contact-option" href="mailto:jlexpressmensajeriaturri@gmail.com">
+              <a class="contact-option" href="mailto:jlexpressturrialba@gmail.com">
                 <span class="contact-option-icon" aria-hidden="true">✉</span>
                 <span>
                   <small class="contact-option-email-label">Correo electrónico</small>
-                  <strong>jlexpressmensajeriaturri@gmail.com</strong>
+                  <strong>jlexpressturrialba@gmail.com</strong>
                 </span>
                 <span class="contact-option-arrow" aria-hidden="true">↗</span>
               </a>
@@ -402,8 +419,19 @@
                 <h2 id="privacy-title" data-legal-text="privacy-title">Cómo tratamos tus datos</h2>
               </div>
               <p data-legal-text="privacy-intro">
-                Este aviso describe el uso de datos al visitar el sitio de JL Express y usar el
-                rastreo o las notificaciones.
+                JLEXPRESS (JL Express) es responsable del tratamiento de los datos gestionados
+                mediante este sitio y sus servicios de mensajería en Costa Rica. Para consultas
+                sobre privacidad, escribe a jlexpressturrialba@gmail.com.
+              </p>
+
+              <h3 data-legal-text="privacy-data-title">Datos y finalidades</h3>
+              <p data-legal-text="privacy-data-copy">
+                Tratamos los códigos de seguimiento y estados para localizar y dar seguimiento a
+                los envíos. Para administrar la entrega, también podemos tratar el nombre, teléfono
+                y dirección o ubicación facilitados para el servicio. Usamos estos datos para
+                organizar la operación, atender consultas y reclamos, y mantener la información
+                del pedido actualizada. El rastreo público muestra únicamente el código, el estado
+                y la fecha de actualización.
               </p>
 
               <h3 data-legal-text="privacy-tracking-title">Rastreo y protección del servicio</h3>
@@ -414,14 +442,28 @@
                 HMAC, no la IP en claro; el límite es de 20 consultas por minuto.
               </p>
 
-              <h3 data-legal-text="privacy-push-title">Notificaciones push opcionales</h3>
+              <h3 data-legal-text="privacy-push-title">Avisos opcionales por correo y push</h3>
               <p data-legal-text="privacy-push-copy">
-                Solo al aceptar y otorgar permiso al navegador se guarda el código del envío, el
-                endpoint y las claves técnicas de la suscripción, además de la fecha de
-                consentimiento. Estos datos se usan para avisar cambios de estado; la suscripción
-                se elimina cuando el pedido se completa o el servicio detecta un endpoint vencido.
-                Puedes revocar el permiso en el navegador o solicitar la baja por nuestros canales
-                de contacto.
+                Los avisos son opcionales. Para correo, guardamos la dirección, el código del
+                envío y las fechas de consentimiento y confirmación; debes confirmar la dirección
+                y puedes cancelar desde el enlace del mensaje. Los correos se envían mediante
+                Gmail. Para push, guardamos el código, el endpoint y las claves técnicas de la
+                suscripción en el dispositivo; el navegador y su servicio de notificaciones
+                intervienen en la entrega. Las suscripciones push se eliminan al marcarse el envío
+                como entregado/listo para recoger o si el endpoint vence. La suscripción por correo
+                permanece activa hasta que la canceles; el registro de cancelación puede conservarse
+                para dejar constancia de tu solicitud.
+              </p>
+
+              <h3 data-legal-text="privacy-providers-title">Proveedores y comunicaciones</h3>
+              <p data-legal-text="privacy-providers-copy">
+                Usamos Supabase para la base de datos y funciones del sitio, Gmail para enviar
+                avisos por correo y Cloudflare para recibir la dirección IP necesaria para limitar
+                consultas automatizadas de rastreo. Para proteger el servicio, se conserva un HMAC
+                de esa IP, no la dirección en texto claro; los registros de limitación antiguos se
+                depuran periódicamente. Si nos contactas por WhatsApp, Meta procesa esa
+                comunicación conforme a sus propias condiciones y aviso de privacidad. Estos
+                proveedores pueden tratar datos en servidores fuera de Costa Rica.
               </p>
 
               <h3 data-legal-text="privacy-browser-title">Almacenamiento en el navegador</h3>
@@ -433,18 +475,24 @@
 
               <h3 data-legal-text="privacy-retention-title">Uso, conservación y consultas</h3>
               <p data-legal-text="privacy-retention-copy">
-                Los datos del envío se utilizan para prestar y dar seguimiento al servicio, y se
-                conservan según las necesidades operativas y las obligaciones aplicables. Para
-                consultas o solicitudes relacionadas con tus datos, contacta a JL Express:
+                Los datos operativos se utilizan mientras el envío está en gestión y hasta su
+                entrega. Marcar un pedido como entregado no elimina automáticamente su registro;
+                los datos pueden conservarse después para atender consultas o reclamos, proteger
+                el servicio o cumplir obligaciones legales. Puedes solicitar acceso, corrección o
+                eliminación escribiendo a JL Express; atenderemos la solicitud conforme a la
+                normativa aplicable y a las obligaciones de conservación. Para consultas sobre tus
+                datos, utiliza también este contacto:
               </p>
               <p class="legal-contact">
                 <a href="tel:+50672394578">+506 7239-4578</a>
                 <span> · </span>
                 <a href="tel:+50664336134">+506 6433-6134</a>
                 <span> · </span>
-                <a href="tel:+50662818796">+506 6281-8796</a>
+                <a href="tel:+50662818798">+506 6281-8798</a>
+                <span> · </span>
+                <a href="mailto:jlexpressturrialba@gmail.com">jlexpressturrialba@gmail.com</a>
               </p>
-              <p class="legal-date" data-legal-text="legal-updated">Actualizado: 15 de octubre de 2026.</p>
+              <p class="legal-date" data-legal-text="legal-updated">Actualizado: 23 de octubre de 2026.</p>
             </section>
 
             <section class="legal-section" id="terminos" aria-labelledby="terms-title" tabindex="-1">
@@ -453,17 +501,29 @@
                 <h2 id="terms-title" data-legal-text="terms-title">Uso del sitio y coordinación de envíos</h2>
               </div>
               <p data-legal-text="terms-intro">
-                Estos términos cubren el uso del sitio de JL Express para consultar envíos y
-                solicitar información. Cada servicio de transporte se coordina y confirma por
-                separado.
+                Estos términos regulan el uso del sitio de JL Express (JLEXPRESS) para consultar
+                el estado de pedidos y solicitar servicios de mensajería en Costa Rica. Los
+                pedidos extra y sus condiciones se coordinan por WhatsApp.
+              </p>
+
+              <h3 data-legal-text="terms-service-title">Servicio y responsabilidad</h3>
+              <p data-legal-text="terms-service-copy">
+                La gestión de JL Express comienza cuando el paquete está disponible para ser
+                recogido por la empresa y es aceptado para su traslado. El servicio se presta
+                hasta la entrega al destinatario o hasta que el paquete quede disponible para
+                retiro, según lo coordinado. Si surge un problema, comunícate con soporte e
+                indica el código de seguimiento para que podamos revisar el caso. La atención y
+                responsabilidad se rigen por las condiciones confirmadas para cada servicio y la
+                legislación aplicable en Costa Rica; estos términos no excluyen derechos ni
+                responsabilidades que la ley no permita excluir.
               </p>
 
               <h3 data-legal-text="terms-quotes-title">Tarifas y entrega</h3>
               <p data-legal-text="terms-quotes-copy">
-                La cobertura, disponibilidad, tarifa, forma de entrega y plazo estimado se
-                confirman al coordinar cada solicitud por WhatsApp, teléfono o correo. El sitio no
-                publica una tarifa ni garantiza un plazo general; espera la confirmación de JL
-                Express antes de enviar o entregar un paquete.
+                La disponibilidad, tarifa, destino, forma de entrega y plazo estimado de cada
+                pedido extra se acuerdan por WhatsApp antes de confirmar la solicitud. No hay
+                tarifas ni plazos generales publicados en el sitio. Sigue las instrucciones de
+                entrega que JL Express confirme para tu pedido.
               </p>
 
               <h3 data-legal-text="terms-tracking-title">Rastreo del pedido</h3>
@@ -485,12 +545,15 @@
 
               <h3 data-legal-text="terms-rights-title">Derechos y contacto</h3>
               <p data-legal-text="terms-rights-copy">
-                Estos términos no limitan los derechos irrenunciables que te correspondan conforme
-                a la normativa aplicable en Costa Rica. Para confirmar las condiciones de un
-                servicio o presentar una consulta, utiliza los canales de contacto indicados en
-                este sitio.
+                Proporciona información correcta para coordinar la entrega y consulta únicamente
+                códigos de seguimiento que estés autorizado a usar. Las notificaciones por correo
+                y push son opcionales y requieren consentimiento; puedes cancelar el correo desde
+                el mensaje o desactivar push en el navegador. Para dudas, reclamos o solicitudes
+                sobre tus datos, contacta a soporte por WhatsApp o escribe a
+                jlexpressturrialba@gmail.com. Estos términos se aplican sin perjuicio de los
+                derechos que reconoce la normativa costarricense.
               </p>
-              <p class="legal-date" data-legal-text="legal-updated">Actualizado: 15 de octubre de 2026.</p>
+              <p class="legal-date" data-legal-text="legal-updated">Actualizado: 23 de octubre de 2026.</p>
             </section>
           </div>
         </section>
@@ -513,8 +576,8 @@
           <span class="footer-heading">Contacto</span>
           <a href="tel:+50672394578">+506 7239-4578</a>
           <a href="tel:+50664336134">+506 6433-6134</a>
-          <a href="tel:+50662818796">+506 6281-8796</a>
-          <a href="mailto:jlexpressmensajeriaturri@gmail.com">jlexpressmensajeriaturri@gmail.com</a>
+          <a href="tel:+50662818798">+506 6281-8798</a>
+          <a href="mailto:jlexpressturrialba@gmail.com">jlexpressturrialba@gmail.com</a>
         </div>
 
         <div class="footer-social">

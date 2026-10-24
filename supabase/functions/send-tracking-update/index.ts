@@ -1,5 +1,7 @@
 export {};
 
+import { getGmailAccessToken, getGmailConfiguration, sendGmailMessage } from "../_shared/gmail.ts";
+
 const deno = (globalThis as typeof globalThis & {
 	Deno: {
 		env: { get: (name: string) => string | undefined };
@@ -17,14 +19,19 @@ deno.serve(async (request: Request) => {
 		return Response.json({ error: "No autorizado." }, { status: 401 });
 	}
 
-	const resendApiKey = deno.env.get("RESEND_API_KEY");
-	const fromEmail = deno.env.get("RESEND_FROM_EMAIL");
+	let gmailConfiguration;
+	try {
+		gmailConfiguration = getGmailConfiguration();
+	} catch {
+		console.error("Falta configurar Gmail API para las notificaciones.");
+		return Response.json({ error: "El servicio de correo no está configurado." }, { status: 500 });
+	}
 	const logoUrl = deno.env.get("EMAIL_LOGO_URL");
 	const supabaseUrl = deno.env.get("SUPABASE_URL");
 	const serviceRoleKey = deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 	const unsubscribeSecret = deno.env.get("UNSUBSCRIBE_SECRET");
 
-	if (!resendApiKey || !fromEmail || !logoUrl || !supabaseUrl || !serviceRoleKey || !unsubscribeSecret) {
+	if (!logoUrl || !supabaseUrl || !serviceRoleKey || !unsubscribeSecret) {
 		console.error("Falta configurar uno o más secretos para las notificaciones.");
 		return Response.json({ error: "El servicio de correo no está configurado." }, { status: 500 });
 	}
@@ -68,6 +75,7 @@ deno.serve(async (request: Request) => {
 		if (!subscriptions.length) {
 			return Response.json({ sent: 0, reason: "No hay suscripciones para este envío." });
 		}
+		const accessToken = await getGmailAccessToken(gmailConfiguration);
 
 		const updateTime = String(shipment.ultima_actualizacion ?? new Date().toISOString());
 		const formattedUpdateTime = formatUpdateTime(updateTime);
@@ -83,7 +91,6 @@ deno.serve(async (request: Request) => {
 			const escapedPreviousStatus = escapeHtml(previousStatus);
 			const escapedStatus = escapeHtml(newStatus);
 			const escapedUpdateTime = escapeHtml(formattedUpdateTime);
-			const idempotencyKey = await createIdempotencyKey(trackingCode, updateTime, newStatus, subscription.email);
 			const subscriptionId = String(subscription.id);
 			const unsubscribeSignature = await signUnsubscribeId(subscriptionId, unsubscribeSecret);
 			const unsubscribeUrl = new URL("/functions/v1/manage-tracking-subscription", supabaseUrl);
@@ -91,18 +98,10 @@ deno.serve(async (request: Request) => {
 			unsubscribeUrl.searchParams.set("token", `${subscriptionId}.${unsubscribeSignature}`);
 			const escapedUnsubscribeUrl = escapeHtml(unsubscribeUrl.toString());
 
-			const emailResponse = await fetch("https://api.resend.com/emails", {
-				method: "POST",
-				headers: {
-					Authorization: `Bearer ${resendApiKey}`,
-					"Content-Type": "application/json",
-					"Idempotency-Key": idempotencyKey,
-				},
-				body: JSON.stringify({
-					from: `JL Express <${fromEmail}>`,
-					to: [subscription.email],
-					subject: `Actualización de tu envío ${trackingCode}`,
-					html: `
+			await sendGmailMessage(accessToken, gmailConfiguration, {
+				to: subscription.email,
+				subject: `Actualización de tu envío ${trackingCode}`,
+				html: `
 						<div style="margin:0;background:#f3f6fa;padding:32px 16px;font-family:Arial,sans-serif;color:#172334">
 							<div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #dce3eb;border-radius:8px;overflow:hidden">
 								<div style="padding:28px 32px;text-align:center;background:#102f55">
@@ -125,15 +124,9 @@ deno.serve(async (request: Request) => {
 									<p style="margin:20px 0 0;color:#52657a;font-size:13px"><a href="${escapedUnsubscribeUrl}" style="color:#123c70">Cancelar estos avisos</a></p>
 								</div>
 							</div>
-						</div>`,
-					text: `Hola ${customerName},\n\nEl estado de tu envío ${trackingCode} cambió.\nEstado anterior: ${previousStatus}.\nEstado nuevo: ${newStatus}.\nActualizado: ${formattedUpdateTime}.\n\nGracias por confiar en JL Express.\n\nPara cancelar estos avisos: ${unsubscribeUrl.toString()}`,
-				}),
+							</div>`,
+				text: `Hola ${customerName},\n\nEl estado de tu envío ${trackingCode} cambió.\nEstado anterior: ${previousStatus}.\nEstado nuevo: ${newStatus}.\nActualizado: ${formattedUpdateTime}.\n\nGracias por confiar en JL Express.\n\nPara cancelar estos avisos: ${unsubscribeUrl.toString()}`,
 			});
-
-			if (!emailResponse.ok) {
-				const providerError = await emailResponse.text();
-				throw new Error(`Resend rechazó el correo (${emailResponse.status}): ${providerError}`);
-			}
 		}));
 
 		const failedDeliveries = deliveries.filter((delivery) => delivery.status === "rejected");
@@ -169,12 +162,6 @@ function formatUpdateTime(value: string) {
 		timeStyle: "short",
 		timeZone: "America/Costa_Rica",
 	}).format(date);
-}
-
-async function createIdempotencyKey(...parts: string[]) {
-	const input = new TextEncoder().encode(parts.join("|"));
-	const digest = await crypto.subtle.digest("SHA-256", input);
-	return `shipment-${Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
 }
 
 async function signUnsubscribeId(subscriptionId: string, secret: string) {

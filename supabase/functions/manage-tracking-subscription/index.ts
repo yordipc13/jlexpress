@@ -1,5 +1,7 @@
 export {};
 
+import { getGmailAccessToken, getGmailConfiguration, sendGmailMessage } from "../_shared/gmail.ts";
+
 const deno = (globalThis as typeof globalThis & {
 	Deno: {
 		env: { get: (name: string) => string | undefined };
@@ -24,7 +26,7 @@ deno.serve(async (request: Request) => {
 			const action = new URL(request.url).searchParams.get("action");
 			if (action === "unsubscribe") return await handleUnsubscribe(request);
 			if (action === "confirm") return await handleConfirm(request);
-			if (action !== "subscribe") return jsonResponse({ error: "Acción no válida." }, 400);
+			if (action && action !== "subscribe") return jsonResponse({ error: "Acción no válida." }, 400);
 			return await handleSubscribe(request);
 		}
 
@@ -59,11 +61,16 @@ async function handleSubscribe(request: Request) {
 		return jsonResponse({ error: "Revisa el código, el correo y el consentimiento." }, 400);
 	}
 
-	const resendApiKey = deno.env.get("RESEND_API_KEY");
-	const fromEmail = deno.env.get("RESEND_FROM_EMAIL");
+	let gmailConfiguration;
+	try {
+		gmailConfiguration = getGmailConfiguration();
+	} catch {
+		console.error("Falta configurar Gmail API para la confirmación de avisos.");
+		return jsonResponse({ error: "El servicio de correo no está configurado." }, 500);
+	}
 	const supabaseUrl = deno.env.get("SUPABASE_URL");
 	const serviceRoleKey = deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-	if (!resendApiKey || !fromEmail || !supabaseUrl || !serviceRoleKey) {
+	if (!supabaseUrl || !serviceRoleKey) {
 		console.error("Falta configurar uno o más secretos para la confirmación de avisos.");
 		return jsonResponse({ error: "El servicio de correo no está configurado." }, 500);
 	}
@@ -82,16 +89,10 @@ async function handleSubscribe(request: Request) {
 	}
 
 	const confirmationUrl = createActionUrl(supabaseUrl, "confirm", confirmationToken);
-	const emailResponse = await fetch("https://api.resend.com/emails", {
-		method: "POST",
-		headers: {
-			Authorization: `Bearer ${resendApiKey}`,
-			"Content-Type": "application/json",
-			"Idempotency-Key": `tracking-confirmation-${confirmationTokenHash}`,
-		},
-		body: JSON.stringify({
-			from: `JL Express <${fromEmail}>`,
-			to: [email],
+	try {
+		const accessToken = await getGmailAccessToken(gmailConfiguration);
+		await sendGmailMessage(accessToken, gmailConfiguration, {
+			to: email,
 			subject: "Confirma los avisos de tu envío | JL Express",
 			html: `
 				<div style="margin:0;background:#f3f6fa;padding:32px 16px;font-family:Arial,sans-serif;color:#172334">
@@ -104,10 +105,8 @@ async function handleSubscribe(request: Request) {
 				</div>`,
 			text: `Confirma tu suscripción a los avisos de JL Express abriendo este enlace: ${confirmationUrl}\n\nSi no solicitaste estos avisos, ignora este mensaje. El enlace vence en 24 horas.`,
 		}),
-	});
-
-	if (!emailResponse.ok) {
-		console.error("Resend rechazó el correo de confirmación:", emailResponse.status, await emailResponse.text());
+	} catch (error) {
+		console.error("No se pudo enviar el correo de confirmación por Gmail:", error);
 		return jsonResponse({ error: "No se pudo enviar el correo de confirmación. Inténtalo más tarde." }, 502);
 	}
 

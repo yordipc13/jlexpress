@@ -67,11 +67,51 @@ const debugClearError = document.querySelector("#debug-clear-error");
 const debugClearOptions = document.querySelector("#debug-clear-options");
 const debugClearConfirmActions = document.querySelector("#debug-clear-confirm-actions");
 const confirmDebugClearButton = document.querySelector("#confirm-debug-clear");
+const sidebarToggle = document.querySelector("#toggle-admin-sidebar");
+const adminSidebar = document.querySelector("#admin-sidebar");
+const sidebarBackdrop = document.querySelector("#sidebar-backdrop");
+const closeSidebarButton = document.querySelector("#close-admin-sidebar");
+const showCouriersButton = document.querySelector("#show-couriers");
+const courierOverviewDialog = document.querySelector("#courier-overview-dialog");
+const courierOverviewMessage = document.querySelector("#courier-overview-message");
+const courierOverviewList = document.querySelector("#courier-overview-list");
+const activityLogsButton = document.querySelector("#show-activity-logs");
+const activityLogDialog = document.querySelector("#activity-log-dialog");
+const activityLogAction = document.querySelector("#activity-log-action");
+const activityLogMessage = document.querySelector("#activity-log-message");
+const activityLogList = document.querySelector("#activity-log-list");
+let activityLogEntries = [];
+let activityLogLoading = false;
+let activityLogError = "";
 const themeToggle = document.querySelector("#theme-toggle");
 const usersButton = document.querySelector("#show-admin-users");
 const usersDialog = document.querySelector("#users-dialog");
 const usersBody = document.querySelector("#admin-users-body");
 const usersMessage = document.querySelector("#users-message");
+const openAdminInviteButton = document.querySelector("#open-admin-invite");
+const openAdminUserDeleteButton = document.querySelector("#open-admin-user-delete");
+const adminInviteDialog = document.querySelector("#admin-invite-dialog");
+const adminInviteForm = document.querySelector("#admin-invite-form");
+const adminInviteMessage = document.querySelector("#admin-invite-message");
+const adminInviteSubmit = document.querySelector("#submit-admin-invite");
+const adminUserDeleteDialog = document.querySelector("#admin-user-delete-dialog");
+const adminUserDeleteForm = document.querySelector("#admin-user-delete-form");
+const adminUserDeleteDescription = document.querySelector("#admin-user-delete-description");
+const adminUserDeleteTarget = document.querySelector("#admin-user-delete-target");
+const adminUserDeleteMessage = document.querySelector("#admin-user-delete-message");
+const adminUserDeleteSubmit = document.querySelector("#submit-admin-user-delete");
+const adminUserRoleDialog = document.querySelector("#admin-user-role-dialog");
+const adminUserRoleForm = document.querySelector("#admin-user-role-form");
+const adminUserRoleDescription = document.querySelector("#admin-user-role-description");
+const adminUserRoleTarget = document.querySelector("#admin-user-role-target");
+const adminUserRoleMessage = document.querySelector("#admin-user-role-message");
+const adminUserRoleSubmit = document.querySelector("#submit-admin-user-role");
+const deliveryAssignmentDialog = document.querySelector("#delivery-assignment-dialog");
+const deliveryAssignmentForm = document.querySelector("#delivery-assignment-form");
+const deliveryAssignmentDescription = document.querySelector("#delivery-assignment-description");
+const deliveryAssignmentCourier = document.querySelector("#delivery-assignment-courier");
+const deliveryAssignmentMessage = document.querySelector("#delivery-assignment-message");
+const deliveryAssignmentSubmit = document.querySelector("#save-delivery-assignment");
 const toast = document.querySelector("#toast");
 const toastMessage = document.querySelector("#toast-message");
 const toastActionButton = document.querySelector("#toast-action");
@@ -85,6 +125,12 @@ const customerUpdateDialog = document.querySelector("#customer-update-dialog");
 const customerUpdateMessage = document.querySelector("#customer-update-message");
 const customerUpdateList = document.querySelector("#customer-update-list");
 let currentAdminUser = null;
+let adminUsers = [];
+let adminUsersCanManageAccounts = false;
+let courierOverviewLoading = false;
+let pendingAdminUserDeletion = null;
+let pendingAdminUserRoleChange = null;
+let pendingDeliveryAssignment = null;
 let pendingClearCategory = null;
 let pendingBulkDeleteIds = [];
 let presenceInterval = null;
@@ -98,6 +144,14 @@ const ONLINE_WINDOW_MS = 90_000;
 const PRESENCE_INTERVAL_MS = 30_000;
 const ROUTE_PACKAGE_NO_COMPANY_PREFIX = "__paquete_sin_empresa__";
 const ROUTE_LONG_PRESS_DURATION_MS = 550;
+const LOGIN_FAILURE_LIMIT = 3;
+const LOGIN_COOLDOWN_MS = 30_000;
+const LOGIN_THROTTLE_STORAGE_KEY = "ji-express-admin-login-throttle";
+const STAFF_ROLES = new Set(["admin", "editor"]);
+const ACCOUNT_ROLES = ["admin", "editor", "repartidor"];
+let loginThrottleState = loadLoginThrottleState();
+let loginRequestInProgress = false;
+let loginCooldownTimer = null;
 const ROUTE_LONG_PRESS_MOVE_THRESHOLD_PX = 12;
 
 function renderAdminErrors() {
@@ -126,6 +180,217 @@ function reportAdminError(message) {
   adminErrors.push({ message: text, timestamp: new Date() });
   renderAdminErrors();
 }
+
+const activityActionLabels = {
+  pedido_agregado: "Pedido agregado",
+  pedido_editado: "Pedido editado",
+  pedido_borrado: "Pedido borrado",
+  estado_cambiado: "Cambio de estado",
+  pedido_finalizado: "Pedido finalizado",
+  repartidor_finalizo_pedido: "Repartidor finalizó pedido",
+  archivo_importado: "Archivo importado",
+  repartidor_asignado: "Repartidor asignado",
+  asignacion_retirada: "Asignación retirada",
+  usuario_agregado: "Usuario agregado",
+  rol_cambiado: "Rol cambiado",
+  usuario_eliminado: "Usuario eliminado",
+};
+
+function setAdminSidebarOpen(isOpen) {
+  adminSidebar.classList.toggle("is-open", isOpen);
+  adminSidebar.setAttribute("aria-hidden", String(!isOpen));
+  sidebarBackdrop.hidden = !isOpen;
+  sidebarToggle.setAttribute("aria-expanded", String(isOpen));
+  sidebarToggle.setAttribute("aria-label", isOpen ? "Cerrar menú de administración" : "Abrir menú de administración");
+}
+
+sidebarToggle.addEventListener("click", () => setAdminSidebarOpen(!adminSidebar.classList.contains("is-open")));
+closeSidebarButton.addEventListener("click", () => setAdminSidebarOpen(false));
+sidebarBackdrop.addEventListener("click", () => setAdminSidebarOpen(false));
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && adminSidebar.classList.contains("is-open")) setAdminSidebarOpen(false);
+});
+
+showCouriersButton.addEventListener("click", async () => {
+  setAdminSidebarOpen(false);
+  courierOverviewDialog.showModal();
+  await loadCourierOverview();
+});
+document.querySelector("#close-courier-overview").addEventListener("click", () => courierOverviewDialog.close());
+document.querySelector("#refresh-courier-overview").addEventListener("click", loadCourierOverview);
+
+function renderCourierOverview(couriers, assignments) {
+  courierOverviewList.replaceChildren();
+  if (!couriers.length) {
+    courierOverviewMessage.textContent = "No hay cuentas de repartidor autorizadas.";
+    return;
+  }
+  courierOverviewMessage.textContent = courierOverviewLoading ? "Actualizando repartidores..." : "";
+
+  for (const courier of couriers) {
+    const courierAssignments = assignments.filter((item) => item.courier_user_id === courier.user_id);
+    const deliveries = courierAssignments.map((assignment) => {
+      const code = normalize(assignment.tracking_code);
+      if (assignment.source_table === "Xcargo") {
+        const shipment = companyThreeShipments.find((item) => normalize(item.tracking_code) === code);
+        return {
+          trackingCode: shipment?.tracking_code ?? assignment.tracking_code,
+          client: shipment?.cliente_nombre || "Sin nombre",
+          status: shipment?.estado_envio || "Pedido no disponible",
+          source: "Xcargo",
+        };
+      }
+      if (assignment.source_table === "paquetes_ruta") {
+        const routePackage = routePackages.find((item) => normalize(item.tracking_code) === code);
+        const linkedOrder = orders.find((item) => normalize(item.tracking_code) === code);
+        return {
+          trackingCode: linkedOrder?.tracking_code ?? routePackage?.tracking_code ?? assignment.tracking_code,
+          client: linkedOrder?.cliente_nombre || routePackage?.cliente_nombre || "Sin nombre",
+          status: linkedOrder?.estado || (routePackage ? "Solo información de ruta" : "Pedido no disponible"),
+          source: linkedOrder ? "Envíos" : "Ruta",
+        };
+      }
+      const shipment = orders.find((item) => normalize(item.tracking_code) === code);
+      return {
+        trackingCode: shipment?.tracking_code ?? assignment.tracking_code,
+        client: shipment?.cliente_nombre || "Sin nombre",
+        status: shipment?.estado || "Pedido no disponible",
+        source: "Envíos",
+      };
+    });
+    const activeDelivery = deliveries.find((delivery) => normalize(delivery.status) === "en camino");
+
+    const card = document.createElement("section");
+    card.className = "courier-overview-card";
+    const heading = document.createElement("div");
+    heading.className = "courier-overview-card-heading";
+    const name = document.createElement("h3");
+    name.textContent = courier.name || courier.email;
+    const active = document.createElement("span");
+    active.className = "courier-active-delivery";
+    active.textContent = activeDelivery
+      ? `Entregando ahora: ${activeDelivery.trackingCode}`
+      : "Sin entrega en camino";
+    heading.append(name, active);
+    card.append(heading);
+
+    if (!deliveries.length) {
+      const empty = document.createElement("p");
+      empty.className = "courier-no-assignments";
+      empty.textContent = "No tiene pedidos asignados.";
+      card.append(empty);
+    } else {
+      const tableWrap = document.createElement("div");
+      tableWrap.className = "courier-overview-table-wrap";
+      const table = document.createElement("table");
+      table.className = "courier-overview-table";
+      const thead = document.createElement("thead");
+      const headerRow = document.createElement("tr");
+      for (const label of ["Guía", "Cliente", "Origen", "Estado"]) {
+        const th = document.createElement("th");
+        th.scope = "col";
+        th.textContent = label;
+        headerRow.append(th);
+      }
+      thead.append(headerRow);
+      const tbody = document.createElement("tbody");
+      for (const delivery of deliveries) {
+        const row = document.createElement("tr");
+        for (const value of [delivery.trackingCode, delivery.client, delivery.source, delivery.status]) {
+          const cell = document.createElement("td");
+          cell.textContent = value;
+          row.append(cell);
+        }
+        tbody.append(row);
+      }
+      table.append(thead, tbody);
+      tableWrap.append(table);
+      card.append(tableWrap);
+    }
+    courierOverviewList.append(card);
+  }
+}
+
+async function loadCourierOverview() {
+  courierOverviewLoading = true;
+  courierOverviewMessage.textContent = "Cargando asignaciones...";
+  try {
+    const [{ data: courierData, error: courierError }, assignmentResult] = await Promise.all([
+      window.supabaseClient.functions.invoke("manage-admin-users", { body: { action: "couriers" } }),
+      window.supabaseClient.from("delivery_assignments")
+        .select("source_table,tracking_code,courier_user_id")
+        .order("assigned_at", { ascending: false }),
+    ]);
+    if (courierError) throw courierError;
+    if (courierData?.error) throw new Error(courierData.error);
+    if (assignmentResult.error) throw assignmentResult.error;
+    const couriers = Array.isArray(courierData?.couriers) ? courierData.couriers : [];
+    renderCourierOverview(couriers, assignmentResult.data ?? []);
+  } catch (error) {
+    courierOverviewMessage.textContent = `No se pudo cargar el resumen: ${error.message || "Error desconocido."}`;
+    reportAdminError(courierOverviewMessage.textContent);
+  } finally {
+    courierOverviewLoading = false;
+  }
+}
+
+function renderActivityLogs() {
+  activityLogMessage.textContent = activityLogLoading ? "Cargando actividad..." : activityLogError;
+  activityLogList.replaceChildren();
+  if (activityLogLoading || activityLogError) return;
+  if (!activityLogEntries.length) {
+    const empty = document.createElement("p");
+    empty.className = "activity-log-empty";
+    empty.textContent = "No hay registros para esta acción durante los últimos siete días.";
+    activityLogList.append(empty);
+    return;
+  }
+  for (const entry of activityLogEntries) {
+    const item = document.createElement("article");
+    item.className = "activity-log-entry";
+    const message = document.createElement("p");
+    message.textContent = entry.message;
+    const footer = document.createElement("footer");
+    const actor = document.createElement("span");
+    actor.textContent = entry.actor_email || "Cuenta desconocida";
+    const timestamp = document.createElement("time");
+    timestamp.dateTime = entry.created_at;
+    timestamp.textContent = new Date(entry.created_at).toLocaleString("es");
+    const action = document.createElement("span");
+    action.textContent = activityActionLabels[entry.action] || entry.action;
+    footer.append(actor, timestamp, action);
+    item.append(message, footer);
+    activityLogList.append(item);
+  }
+}
+
+async function loadActivityLogs() {
+  activityLogLoading = true;
+  activityLogError = "";
+  renderActivityLogs();
+  try {
+    const { data, error } = await window.supabaseClient.rpc("get_admin_activity_logs", {
+      p_action: activityLogAction.value || null,
+    });
+    if (error) throw error;
+    activityLogEntries = Array.isArray(data) ? data : [];
+  } catch (error) {
+    activityLogError = `No se pudieron cargar los logs: ${error.message || "Error desconocido."}`;
+    reportAdminError(activityLogError);
+  } finally {
+    activityLogLoading = false;
+    renderActivityLogs();
+  }
+}
+
+activityLogsButton.addEventListener("click", async () => {
+  setAdminSidebarOpen(false);
+  activityLogDialog.showModal();
+  await loadActivityLogs();
+});
+document.querySelector("#close-activity-logs").addEventListener("click", () => activityLogDialog.close());
+document.querySelector("#refresh-activity-logs").addEventListener("click", loadActivityLogs);
+activityLogAction.addEventListener("change", loadActivityLogs);
 
 adminErrorsButton.addEventListener("click", () => adminErrorsDialog.showModal());
 document.querySelector("#close-admin-errors").addEventListener("click", () => adminErrorsDialog.close());
@@ -422,7 +687,7 @@ function mapFormOrder(formData, currentStatus = "en sucursal") {
   };
 }
 
-async function importCompanyThreeRows(rows, headerRowIndex, normalizeHeader) {
+async function importCompanyThreeRows(rows, headerRowIndex, normalizeHeader, fileName) {
   const headers = rows[headerRowIndex].map(normalizeHeader);
   const findHeaderIndex = (...aliases) => headers.findIndex((header) => aliases.includes(header));
   const columns = {
@@ -480,6 +745,13 @@ async function importCompanyThreeRows(rows, headerRowIndex, normalizeHeader) {
       throw new Error("Supabase no confirmó todos los envíos de Xcargo importados.");
     }
     companyThreeShipments = [...companyThreeShipments, ...data];
+    const { error: activityError } = await window.supabaseClient.rpc("log_admin_activity", {
+      p_action: "archivo_importado",
+      p_message: fileName,
+    });
+    if (activityError) {
+      throw new Error(`Los envíos de Xcargo se guardaron, pero no se pudo registrar "${fileName}" en Logs: ${activityError.message}`);
+    }
   }
 
   viewSelect.value = "empresa-3";
@@ -719,8 +991,8 @@ refreshOrdersButton.addEventListener("click", async () => {
 });
 
 deleteSelectedOrdersButton.addEventListener("click", () => {
-  if (currentAdminUser?.app_metadata?.role !== "admin") {
-    reportAdminError("Necesitas una sesión de administrador para borrar envíos.");
+  if (!STAFF_ROLES.has(currentAdminUser?.app_metadata?.role)) {
+    reportAdminError("Necesitas una sesión administrativa o editora para borrar envíos.");
     return;
   }
 
@@ -745,8 +1017,8 @@ bulkDeleteDialog.addEventListener("close", () => {
 confirmBulkDeleteButton.addEventListener("click", async () => {
   const selectedIds = [...pendingBulkDeleteIds];
   if (!selectedIds.length) return bulkDeleteDialog.close();
-  if (currentAdminUser?.app_metadata?.role !== "admin") {
-    bulkDeleteError.textContent = "Tu sesión de administrador ya no está activa.";
+  if (!STAFF_ROLES.has(currentAdminUser?.app_metadata?.role)) {
+    bulkDeleteError.textContent = "Tu sesión administrativa o editora ya no está activa.";
     return;
   }
 
@@ -796,8 +1068,8 @@ clearOrderSelectionButton.addEventListener("click", () => {
 });
 
 debugClearOrdersButton.addEventListener("click", () => {
-  if (currentAdminUser?.app_metadata?.role !== "admin") {
-    reportAdminError("Necesitas una sesión de administrador para borrar datos.");
+  if (!STAFF_ROLES.has(currentAdminUser?.app_metadata?.role)) {
+    reportAdminError("Necesitas una sesión administrativa o editora para borrar datos.");
     return;
   }
 
@@ -927,6 +1199,9 @@ function showLogin(message = "") {
   authPanel.hidden = false;
   adminWorkspace.hidden = true;
   signOutButton.hidden = true;
+  sidebarToggle.hidden = true;
+  setAdminSidebarOpen(false);
+  usersButton.hidden = true;
   authMessage.textContent = message;
   databaseStatus = "Inicia sesión para consultar los envíos";
   selectedOrderIds.clear();
@@ -936,9 +1211,16 @@ function showLogin(message = "") {
 }
 
 async function startAdminSession(session) {
-  if (session?.user?.app_metadata?.role !== "admin") {
+  const role = session?.user?.app_metadata?.role;
+  if (role === "repartidor") {
+    const courierUrl = new URL("repartidor.html", window.location.href);
+    courierUrl.search = window.location.search;
+    window.location.replace(courierUrl.href);
+    return;
+  }
+  if (!STAFF_ROLES.has(role)) {
     await window.supabaseClient.auth.signOut();
-    const message = "Esta cuenta no tiene permisos de administración.";
+    const message = "Esta cuenta no tiene permisos para acceder al panel administrativo.";
     reportAdminError(message);
     showLogin(message);
     return;
@@ -948,12 +1230,17 @@ async function startAdminSession(session) {
   authPanel.hidden = true;
   adminWorkspace.hidden = false;
   signOutButton.hidden = false;
-  usersButton.hidden = false;
+  sidebarToggle.hidden = false;
+  setAdminSidebarOpen(false);
+  usersButton.hidden = role === "editor";
+  adminUsersCanManageAccounts = false;
+  openAdminInviteButton.hidden = true;
+  openAdminUserDeleteButton.hidden = true;
   currentAdminUser = session.user;
   await loadOrders();
   try {
     await updateAdminPresence();
-    await loadAdminUsers();
+    if (role === "admin") await loadAdminUsers();
     presenceTrackingEnabled = true;
   } catch (error) {
     presenceTrackingEnabled = false;
@@ -995,46 +1282,263 @@ async function updateAdminPresence() {
 }
 
 async function loadAdminUsers() {
+  if (currentAdminUser?.app_metadata?.role !== "admin") {
+    throw new Error("Solo una cuenta administradora puede administrar usuarios.");
+  }
   usersMessage.textContent = "";
-  const { data, error } = await window.supabaseClient
-    .from("admin_presence")
-    .select("user_id,email,last_seen_at")
-    .order("email", { ascending: true });
+  openAdminInviteButton.hidden = true;
+  openAdminUserDeleteButton.hidden = true;
+  const { data, error } = await window.supabaseClient.functions.invoke("manage-admin-users", {
+    body: { action: "list" },
+  });
   if (error) throw error;
+  adminUsers = Array.isArray(data?.users) ? data.users : [];
+  adminUsersCanManageAccounts = data?.can_manage === true;
+  openAdminInviteButton.hidden = !adminUsersCanManageAccounts;
+  openAdminUserDeleteButton.hidden = !adminUsersCanManageAccounts;
 
   usersBody.replaceChildren();
-  if (!data.length) {
+  if (!adminUsers.length) {
     const row = document.createElement("tr");
     const cell = document.createElement("td");
-    cell.colSpan = 3;
+    cell.colSpan = 5;
     cell.className = "users-empty";
-    cell.textContent = "No hay usuarios permitidos. Revisa los roles admin y ejecuta la sincronización SQL.";
+    cell.textContent = "No hay cuentas autorizadas. Agrega una desde esta ventana.";
     row.append(cell);
     usersBody.append(row);
     return;
   }
 
   const now = Date.now();
-  for (const user of data) {
-    const isOnline = user.last_seen_at && now - new Date(user.last_seen_at).getTime() <= ONLINE_WINDOW_MS;
+  for (const user of adminUsers) {
+    const isPending = user.is_pending === true;
+    const isOnline = !isPending && user.last_seen_at
+      && now - new Date(user.last_seen_at).getTime() <= ONLINE_WINDOW_MS;
     const row = document.createElement("tr");
     const emailCell = document.createElement("td");
     emailCell.textContent = user.email;
+    const roleCell = document.createElement("td");
+    roleCell.textContent = user.role === "admin"
+      ? "Administrador"
+      : user.role === "editor" ? "Editor" : "Repartidor";
     const statusCell = document.createElement("td");
     const status = document.createElement("span");
-    status.className = `user-status${isOnline ? " is-online" : ""}`;
-    status.textContent = isOnline ? "Conectado" : "Desconectado";
+    status.className = `user-status${isPending ? " is-pending" : isOnline ? " is-online" : ""}`;
+    status.textContent = isPending ? "Pendiente" : isOnline ? "Conectado" : "Desconectado";
     statusCell.append(status);
     const lastSeenCell = document.createElement("td");
-    lastSeenCell.textContent = user.last_seen_at
+    lastSeenCell.textContent = isPending
+      ? "Pendiente de aceptar invitación"
+      : user.last_seen_at
       ? formatTimestamp(user.last_seen_at)
       : "Sin conexión registrada";
-    row.append(emailCell, statusCell, lastSeenCell);
+    const actionsCell = document.createElement("td");
+    const changeRoleButton = document.createElement("button");
+    changeRoleButton.className = "button button-secondary user-role-button";
+    changeRoleButton.type = "button";
+    changeRoleButton.dataset.userId = user.user_id;
+    changeRoleButton.textContent = "Cambiar rol";
+    changeRoleButton.disabled = user.user_id === currentAdminUser.id;
+    changeRoleButton.setAttribute("aria-label", `Cambiar el rol de ${user.email}`);
+    actionsCell.append(changeRoleButton);
+    row.append(emailCell, roleCell, statusCell, lastSeenCell, actionsCell);
     usersBody.append(row);
   }
 }
 
+function resolveDeliveryAssignmentSource(source, trackingCode) {
+  if (source === "route-package") {
+    const linkedOrder = orders.find((order) =>
+      normalize(order.tracking_code) === normalize(trackingCode)
+    );
+    return linkedOrder ? "envios" : "paquetes_ruta";
+  }
+  return source === "empresa-3" ? "Xcargo" : "envios";
+}
+
+async function openDeliveryAssignmentDialog(source, trackingCode) {
+  if (!STAFF_ROLES.has(currentAdminUser?.app_metadata?.role)) {
+    reportAdminError("Solo administradores y editores pueden asignar repartidores.");
+    return;
+  }
+  if (!trackingCode) {
+    reportAdminError("El pedido no tiene un código para asignar.");
+    return;
+  }
+
+  const code = String(trackingCode).trim().toUpperCase();
+  const sourceTable = resolveDeliveryAssignmentSource(source, code);
+  pendingDeliveryAssignment = { sourceTable, trackingCode: code };
+  deliveryAssignmentDescription.textContent = `Pedido ${code}`;
+  deliveryAssignmentMessage.textContent = "Cargando repartidores...";
+  deliveryAssignmentCourier.replaceChildren();
+  deliveryAssignmentSubmit.disabled = true;
+  deliveryAssignmentDialog.showModal();
+
+  try {
+    const { data: courierData, error: courierError } = await window.supabaseClient.functions.invoke(
+      "manage-admin-users",
+      { body: { action: "couriers" } },
+    );
+    if (courierError) throw courierError;
+    if (courierData?.error) throw new Error(courierData.error);
+    const couriers = Array.isArray(courierData?.couriers) ? courierData.couriers : [];
+
+    const { data: assignment, error: assignmentError } = await window.supabaseClient
+      .from("delivery_assignments")
+      .select("courier_user_id")
+      .eq("source_table", sourceTable)
+      .eq("tracking_code", code)
+      .maybeSingle();
+    if (assignmentError) throw assignmentError;
+
+    deliveryAssignmentCourier.add(new Option("Sin repartidor", "__unassigned__"));
+    for (const courier of couriers) {
+      deliveryAssignmentCourier.add(new Option(courier.email, courier.user_id));
+    }
+    const assignedCourierExists = couriers.some((courier) =>
+      courier.user_id === assignment?.courier_user_id
+    );
+    deliveryAssignmentCourier.value = assignedCourierExists
+      ? assignment.courier_user_id
+      : "__unassigned__";
+    deliveryAssignmentMessage.textContent = assignment && !assignedCourierExists
+      ? "La cuenta asignada ya no tiene rol de repartidor. Puedes quitar la asignación o elegir otra cuenta."
+      : couriers.length
+        ? ""
+        : "No hay cuentas de repartidor autorizadas. Un administrador debe invitar una desde Usuarios.";
+    deliveryAssignmentSubmit.disabled = couriers.length === 0 && !assignment;
+    deliveryAssignmentCourier.focus();
+  } catch (error) {
+    deliveryAssignmentMessage.textContent = error.message || "No se pudo cargar la asignación.";
+    deliveryAssignmentSubmit.disabled = true;
+    reportAdminError(`No se pudo preparar la asignación: ${deliveryAssignmentMessage.textContent}`);
+  }
+}
+
+document.querySelector("#close-delivery-assignment").addEventListener("click", () => deliveryAssignmentDialog.close());
+document.querySelector("#cancel-delivery-assignment").addEventListener("click", () => deliveryAssignmentDialog.close());
+deliveryAssignmentDialog.addEventListener("close", () => {
+  pendingDeliveryAssignment = null;
+  deliveryAssignmentForm.reset();
+  deliveryAssignmentCourier.replaceChildren();
+  deliveryAssignmentMessage.textContent = "";
+  deliveryAssignmentSubmit.disabled = false;
+  deliveryAssignmentSubmit.removeAttribute("aria-busy");
+});
+deliveryAssignmentForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!pendingDeliveryAssignment) return;
+
+  const courierId = deliveryAssignmentCourier.value === "__unassigned__"
+    ? null
+    : deliveryAssignmentCourier.value;
+  deliveryAssignmentSubmit.disabled = true;
+  deliveryAssignmentSubmit.setAttribute("aria-busy", "true");
+  deliveryAssignmentMessage.textContent = "Guardando asignación...";
+  try {
+    const { error } = await window.supabaseClient.rpc("assign_delivery", {
+      p_source_table: pendingDeliveryAssignment.sourceTable,
+      p_tracking_code: pendingDeliveryAssignment.trackingCode,
+      p_courier_user_id: courierId,
+    });
+    if (error) throw error;
+    const description = pendingDeliveryAssignment.trackingCode;
+    deliveryAssignmentDialog.close();
+    showToast(courierId
+      ? `Se asignó el pedido ${description} al repartidor seleccionado.`
+      : `Se quitó la asignación del pedido ${description}.`);
+  } catch (error) {
+    deliveryAssignmentMessage.textContent = error.message || "No se pudo guardar la asignación.";
+    reportAdminError(`No se pudo asignar el pedido: ${deliveryAssignmentMessage.textContent}`);
+  } finally {
+    deliveryAssignmentSubmit.disabled = false;
+    deliveryAssignmentSubmit.removeAttribute("aria-busy");
+  }
+});
+
+function parseLoginThrottleState(value) {
+  if (!value) return { failedAttempts: 0, cooldownUntil: 0 };
+  const state = JSON.parse(value);
+  if (
+    !Number.isInteger(state.failedAttempts)
+    || state.failedAttempts < 0
+    || !Number.isFinite(state.cooldownUntil)
+    || state.cooldownUntil < 0
+  ) {
+    throw new Error("El estado guardado de intentos de inicio de sesión no es válido.");
+  }
+  return state;
+}
+
+function loadLoginThrottleState() {
+  try {
+    return parseLoginThrottleState(window.localStorage.getItem(LOGIN_THROTTLE_STORAGE_KEY));
+  } catch (error) {
+    reportAdminError(`No se pudo leer el estado de intentos de inicio de sesión: ${error.message || "Error desconocido."}`);
+    return { failedAttempts: 0, cooldownUntil: 0 };
+  }
+}
+
+function persistLoginThrottleState() {
+  try {
+    if (loginThrottleState.failedAttempts === 0 && loginThrottleState.cooldownUntil === 0) {
+      window.localStorage.removeItem(LOGIN_THROTTLE_STORAGE_KEY);
+    } else {
+      window.localStorage.setItem(LOGIN_THROTTLE_STORAGE_KEY, JSON.stringify(loginThrottleState));
+    }
+  } catch (error) {
+    reportAdminError(`No se pudo guardar el estado de intentos de inicio de sesión: ${error.message || "Error desconocido."}`);
+  }
+}
+
+function updateLoginCooldown() {
+  const secondsRemaining = Math.ceil((loginThrottleState.cooldownUntil - Date.now()) / 1000);
+  if (secondsRemaining > 0) {
+    loginSubmit.disabled = true;
+    authMessage.textContent = `Demasiados intentos fallidos. Intenta de nuevo en ${secondsRemaining} segundos.`;
+    if (loginCooldownTimer === null) {
+      loginCooldownTimer = window.setInterval(updateLoginCooldown, 1000);
+    }
+    return;
+  }
+
+  if (loginCooldownTimer !== null) {
+    window.clearInterval(loginCooldownTimer);
+    loginCooldownTimer = null;
+  }
+  if (loginThrottleState.cooldownUntil > 0) {
+    loginThrottleState = { failedAttempts: 0, cooldownUntil: 0 };
+    persistLoginThrottleState();
+    authMessage.textContent = "";
+  }
+  loginSubmit.disabled = loginRequestInProgress;
+}
+
+function registerLoginFailure() {
+  const failedAttempts = loginThrottleState.failedAttempts + 1;
+  loginThrottleState = failedAttempts >= LOGIN_FAILURE_LIMIT
+    ? { failedAttempts: 0, cooldownUntil: Date.now() + LOGIN_COOLDOWN_MS }
+    : { failedAttempts, cooldownUntil: 0 };
+  persistLoginThrottleState();
+  updateLoginCooldown();
+}
+
+updateLoginCooldown();
+
+window.addEventListener("storage", (event) => {
+  if (event.key !== LOGIN_THROTTLE_STORAGE_KEY) return;
+  try {
+    loginThrottleState = parseLoginThrottleState(event.newValue);
+  } catch (error) {
+    reportAdminError(`No se pudo actualizar el estado de intentos de inicio de sesión: ${error.message || "Error desconocido."}`);
+    loginThrottleState = { failedAttempts: 0, cooldownUntil: 0 };
+  }
+  updateLoginCooldown();
+});
+
 usersButton.addEventListener("click", async () => {
+  setAdminSidebarOpen(false);
   usersDialog.showModal();
   try {
     await loadAdminUsers();
@@ -1045,6 +1549,224 @@ usersButton.addEventListener("click", async () => {
 });
 
 document.querySelector("#close-users-dialog").addEventListener("click", () => usersDialog.close());
+openAdminInviteButton.addEventListener("click", () => {
+  adminInviteForm.reset();
+  document.querySelector("#admin-invite-role").value = "editor";
+  adminInviteMessage.textContent = "";
+  adminInviteMessage.classList.remove("is-success");
+  adminInviteDialog.showModal();
+  document.querySelector("#admin-invite-email").focus();
+});
+document.querySelector("#close-admin-invite").addEventListener("click", () => adminInviteDialog.close());
+document.querySelector("#cancel-admin-invite").addEventListener("click", () => adminInviteDialog.close());
+openAdminUserDeleteButton.addEventListener("click", () => {
+  const deletableUsers = adminUsers.filter((user) => user.user_id !== currentAdminUser?.id);
+  adminUserDeleteTarget.replaceChildren(new Option(
+    deletableUsers.length ? "Selecciona una cuenta" : "No hay cuentas para eliminar",
+    "",
+  ));
+  for (const user of deletableUsers) {
+    adminUserDeleteTarget.add(new Option(user.email, user.user_id));
+  }
+  adminUserDeleteForm.reset();
+  adminUserDeleteTarget.value = "";
+  adminUserDeleteTarget.disabled = deletableUsers.length === 0;
+  adminUserDeleteMessage.textContent = "";
+  const passwordField = adminUserDeleteForm.querySelector('label[for="admin-user-delete-password"]');
+  passwordField.hidden = deletableUsers.length === 0;
+  adminUserDeleteDescription.textContent = deletableUsers.length
+    ? "Se eliminará la cuenta seleccionada y perderá acceso al panel. Esta acción no se puede deshacer."
+    : "No hay otras cuentas autorizadas para eliminar.";
+  adminUserDeleteSubmit.disabled = deletableUsers.length === 0;
+  adminUserDeleteDialog.showModal();
+  if (deletableUsers.length) adminUserDeleteTarget.focus();
+});
+document.querySelector("#close-admin-user-delete").addEventListener("click", () => adminUserDeleteDialog.close());
+document.querySelector("#cancel-admin-user-delete").addEventListener("click", () => adminUserDeleteDialog.close());
+adminUserDeleteDialog.addEventListener("close", () => {
+  adminUserDeleteForm.reset();
+  adminUserDeleteTarget.value = "";
+  adminUserDeleteTarget.disabled = false;
+  adminUserDeleteForm.querySelector('label[for="admin-user-delete-password"]').hidden = false;
+  adminUserDeleteMessage.textContent = "";
+  adminUserDeleteSubmit.disabled = false;
+  adminUserDeleteSubmit.removeAttribute("aria-busy");
+});
+adminUserDeleteForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!currentAdminUser?.email || !adminUsersCanManageAccounts) return;
+
+  const targetUser = adminUsers.find((user) =>
+    user.user_id === adminUserDeleteTarget.value && user.user_id !== currentAdminUser.id
+  );
+  if (!targetUser) {
+    adminUserDeleteMessage.textContent = "Selecciona una cuenta que se pueda eliminar.";
+    return;
+  }
+  const passwordInput = document.querySelector("#admin-user-delete-password");
+  const password = passwordInput.value;
+  adminUserDeleteSubmit.disabled = true;
+  adminUserDeleteSubmit.setAttribute("aria-busy", "true");
+  adminUserDeleteMessage.classList.remove("is-success");
+  adminUserDeleteMessage.textContent = "Confirmando tu cuenta...";
+
+  try {
+    const { data: authData, error: authError } = await window.supabaseClient.auth.signInWithPassword({
+      email: currentAdminUser.email,
+      password,
+    });
+    passwordInput.value = "";
+    if (authError || authData?.user?.id !== currentAdminUser.id) {
+      throw new Error("No se pudo confirmar la contraseña de esta cuenta.");
+    }
+    currentAdminUser = authData.user;
+
+    adminUserDeleteMessage.textContent = "Eliminando cuenta...";
+    const { data, error } = await window.supabaseClient.functions.invoke("manage-admin-users", {
+      body: { action: "delete", user_id: targetUser.user_id },
+    });
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+
+    adminUserDeleteDialog.close();
+    await loadAdminUsers();
+    usersMessage.textContent = `Se eliminó la cuenta ${targetUser.email}.`;
+  } catch (error) {
+    passwordInput.value = "";
+    adminUserDeleteMessage.textContent = error.message || "No se pudo eliminar la cuenta.";
+    reportAdminError(`No se pudo eliminar la cuenta: ${adminUserDeleteMessage.textContent}`);
+  } finally {
+    adminUserDeleteSubmit.disabled = false;
+    adminUserDeleteSubmit.removeAttribute("aria-busy");
+  }
+});
+
+usersBody.addEventListener("click", (event) => {
+  const button = event.target.closest(".user-role-button");
+  if (!button) return;
+  const targetUser = adminUsers.find((user) => user.user_id === button.dataset.userId);
+  if (!targetUser || targetUser.user_id === currentAdminUser?.id) return;
+  pendingAdminUserRoleChange = targetUser;
+  adminUserRoleDescription.textContent = `Selecciona el rol de ${targetUser.email}.`;
+  adminUserRoleTarget.value = targetUser.role;
+  adminUserRoleMessage.textContent = "";
+  adminUserRoleDialog.showModal();
+  adminUserRoleTarget.focus();
+});
+
+document.querySelector("#close-admin-user-role").addEventListener("click", () => adminUserRoleDialog.close());
+document.querySelector("#cancel-admin-user-role").addEventListener("click", () => adminUserRoleDialog.close());
+adminUserRoleDialog.addEventListener("close", () => {
+  pendingAdminUserRoleChange = null;
+  adminUserRoleForm.reset();
+  adminUserRoleMessage.textContent = "";
+  adminUserRoleSubmit.disabled = false;
+  adminUserRoleSubmit.removeAttribute("aria-busy");
+});
+adminUserRoleForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const targetUser = pendingAdminUserRoleChange;
+  const nextRole = adminUserRoleTarget.value;
+  if (!targetUser || !adminUsersCanManageAccounts) return;
+  if (!ACCOUNT_ROLES.includes(nextRole)) {
+    adminUserRoleMessage.textContent = "Selecciona un rol válido.";
+    return;
+  }
+  if (targetUser.role === nextRole) {
+    adminUserRoleDialog.close();
+    return;
+  }
+
+  const passwordInput = document.querySelector("#admin-user-role-password");
+  adminUserRoleSubmit.disabled = true;
+  adminUserRoleSubmit.setAttribute("aria-busy", "true");
+  adminUserRoleMessage.textContent = "Confirmando tu cuenta...";
+  try {
+    const { data: authData, error: authError } = await window.supabaseClient.auth.signInWithPassword({
+      email: currentAdminUser.email,
+      password: passwordInput.value,
+    });
+    passwordInput.value = "";
+    if (authError || authData?.user?.id !== currentAdminUser.id) {
+      throw new Error("No se pudo confirmar la contraseña de esta cuenta.");
+    }
+    currentAdminUser = authData.user;
+
+    adminUserRoleMessage.textContent = "Actualizando rol...";
+    const { data, error } = await window.supabaseClient.functions.invoke("manage-admin-users", {
+      body: { action: "set-role", user_id: targetUser.user_id, role: nextRole },
+    });
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+
+    adminUserRoleDialog.close();
+    await loadAdminUsers();
+    usersMessage.textContent = `Se actualizó el rol de ${targetUser.email}.`;
+  } catch (error) {
+    passwordInput.value = "";
+    adminUserRoleMessage.textContent = error.message || "No se pudo actualizar el rol.";
+    reportAdminError(`No se pudo cambiar el rol: ${adminUserRoleMessage.textContent}`);
+  } finally {
+    adminUserRoleSubmit.disabled = false;
+    adminUserRoleSubmit.removeAttribute("aria-busy");
+  }
+});
+adminInviteDialog.addEventListener("close", () => {
+  adminInviteForm.reset();
+  adminInviteMessage.textContent = "";
+  adminInviteMessage.classList.remove("is-success");
+  adminInviteSubmit.disabled = false;
+  adminInviteSubmit.removeAttribute("aria-busy");
+});
+adminInviteForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!currentAdminUser?.email) return;
+
+  const formData = new FormData(adminInviteForm);
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const role = String(formData.get("role") ?? "");
+  const password = String(formData.get("password") ?? "");
+  if (!ACCOUNT_ROLES.includes(role)) {
+    adminInviteMessage.textContent = "Selecciona un rol válido para la cuenta.";
+    return;
+  }
+  const passwordInput = document.querySelector("#admin-invite-password");
+  adminInviteSubmit.disabled = true;
+  adminInviteSubmit.setAttribute("aria-busy", "true");
+  adminInviteMessage.classList.remove("is-success");
+  adminInviteMessage.textContent = "Confirmando tu cuenta...";
+
+  try {
+    const { data: authData, error: authError } = await window.supabaseClient.auth.signInWithPassword({
+      email: currentAdminUser.email,
+      password,
+    });
+    passwordInput.value = "";
+    if (authError || authData?.user?.id !== currentAdminUser.id) {
+      throw new Error("No se pudo confirmar la contraseña de esta cuenta.");
+    }
+    currentAdminUser = authData.user;
+
+    adminInviteMessage.textContent = "Enviando invitación...";
+    const { data, error } = await window.supabaseClient.functions.invoke("manage-admin-users", {
+      body: { action: "invite", email, role },
+    });
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+
+    adminInviteForm.reset();
+    adminInviteMessage.classList.add("is-success");
+    adminInviteMessage.textContent = `Invitación enviada a ${data.email || email} como ${role === "admin" ? "administrador" : role === "editor" ? "editor" : "repartidor"}. La cuenta tendrá acceso cuando complete el registro.`;
+    await loadAdminUsers();
+  } catch (error) {
+    passwordInput.value = "";
+    adminInviteMessage.textContent = error.message || "No se pudo enviar la invitación.";
+    reportAdminError(`No se pudo agregar la cuenta: ${adminInviteMessage.textContent}`);
+  } finally {
+    adminInviteSubmit.disabled = false;
+    adminInviteSubmit.removeAttribute("aria-busy");
+  }
+});
 document.querySelector("#refresh-admin-users").addEventListener("click", async (event) => {
   const button = event.currentTarget;
   button.disabled = true;
@@ -1060,6 +1782,10 @@ document.querySelector("#refresh-admin-users").addEventListener("click", async (
 
 loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
+  updateLoginCooldown();
+  if (loginThrottleState.cooldownUntil > Date.now()) return;
+
+  loginRequestInProgress = true;
   loginSubmit.disabled = true;
   authMessage.textContent = "";
   const formData = new FormData(loginForm);
@@ -1069,13 +1795,22 @@ loginForm.addEventListener("submit", async (event) => {
       email: String(formData.get("email")).trim(),
       password: String(formData.get("password")),
     });
-    if (error) throw error;
+    if (error) {
+      registerLoginFailure();
+      authMessage.textContent = error.message || "No se pudo iniciar sesión.";
+      updateLoginCooldown();
+      reportAdminError(authMessage.textContent);
+      return;
+    }
+    loginThrottleState = { failedAttempts: 0, cooldownUntil: 0 };
+    persistLoginThrottleState();
     await startAdminSession(data.session);
   } catch (error) {
     authMessage.textContent = error.message || "No se pudo iniciar sesión.";
     reportAdminError(authMessage.textContent);
   } finally {
-    loginSubmit.disabled = false;
+    loginRequestInProgress = false;
+    updateLoginCooldown();
   }
 });
 
@@ -1090,6 +1825,9 @@ signOutButton.addEventListener("click", async () => {
     usersRefreshInterval = null;
     presenceTrackingEnabled = false;
     currentAdminUser = null;
+    adminUsersCanManageAccounts = false;
+    adminUsers = [];
+    setAdminSidebarOpen(false);
     usersDialog.close();
     usersButton.hidden = true;
     showLogin("Sesión cerrada.");
@@ -1411,9 +2149,11 @@ function openContextMenu(row, x, y) {
   contextMenu.querySelector('[data-action="status"]').hidden = isFinalRecord;
   contextMenu.querySelector('[data-action="finalize"]').hidden = isFinalRecord;
   contextMenu.querySelector('[data-action="reactivate"]').hidden = !isFinalRecord;
+  contextMenu.querySelector('[data-action="assign"]').hidden =
+    !STAFF_ROLES.has(currentAdminUser?.app_metadata?.role);
   contextMenu.hidden = false;
   contextBackdrop.hidden = false;
-  const menuWidth = 185;
+  const menuWidth = 235;
   const menuHeight = contextMenu.offsetHeight;
   contextMenu.style.left = `${Math.max(8, Math.min(x, window.innerWidth - menuWidth - 8))}px`;
   contextMenu.style.top = `${Math.max(8, Math.min(y, window.innerHeight - menuHeight - 8))}px`;
@@ -1751,6 +2491,11 @@ function finishRoutePackageUpdate(shouldUpdate) {
 }
 
 addOrderButton.addEventListener("click", () => {
+  if (!STAFF_ROLES.has(currentAdminUser?.app_metadata?.role)) {
+    reportAdminError("Necesitas una sesión administrativa o editora para agregar envíos.");
+    return;
+  }
+
   if (viewSelect.value === "empresa-3") {
     openCompanyThreeDialog();
   } else {
@@ -2022,6 +2767,18 @@ contextBackdrop.addEventListener("contextmenu", (event) => {
 });
 contextMenu.addEventListener("click", async (event) => {
   const action = event.target.closest("[data-action]")?.dataset.action;
+  if (action === "assign") {
+    const source = contextMenu.dataset.source;
+    const trackingCode = source === "route-package"
+      ? routePackages.find((item) => item.tracking_code === selectedRoutePackageTrackingCode)?.tracking_code
+      : source === "empresa-3"
+        ? companyThreeShipments.find((item) => String(item.id) === selectedCompanyThreeId)?.tracking_code
+        : orders.find((item) => item.id_excel === selectedOrderId)?.tracking_code;
+    closeContextMenu();
+    await openDeliveryAssignmentDialog(source, trackingCode);
+    return;
+  }
+
   if (contextMenu.dataset.source === "empresa-3") {
     const shipment = companyThreeShipments.find((item) => String(item.id) === selectedCompanyThreeId);
     if (!shipment) return closeContextMenu();
@@ -2279,8 +3036,20 @@ orderForm.addEventListener("submit", async (event) => {
   }
 });
 
-document.querySelector("#import-orders").addEventListener("click", () => excelFile.click());
+document.querySelector("#import-orders").addEventListener("click", () => {
+  if (!STAFF_ROLES.has(currentAdminUser?.app_metadata?.role)) {
+    reportAdminError("Necesitas una sesión administrativa o editora para importar envíos.");
+    return;
+  }
+  excelFile.click();
+});
 excelFile.addEventListener("change", async () => {
+  if (!STAFF_ROLES.has(currentAdminUser?.app_metadata?.role)) {
+    excelFile.value = "";
+    reportAdminError("Necesitas una sesión administrativa o editora para importar envíos.");
+    return;
+  }
+
   const file = excelFile.files?.[0];
   if (!file) return;
   try {
@@ -2334,7 +3103,7 @@ excelFile.addEventListener("change", async () => {
       );
     });
     if (companyThreeHeaderRowIndex >= 0) {
-      await importCompanyThreeRows(rows, companyThreeHeaderRowIndex, normalizeHeader);
+      await importCompanyThreeRows(rows, companyThreeHeaderRowIndex, normalizeHeader, file.name);
       return;
     }
 
@@ -2787,6 +3556,15 @@ excelFile.addEventListener("change", async () => {
           ),
         ];
       }
+      if (importedOrders.length || updatedOrders.length || persistedRoutePackages.length) {
+        const { error: activityError } = await window.supabaseClient.rpc("log_admin_activity", {
+          p_action: "archivo_importado",
+          p_message: file.name,
+        });
+        if (activityError) {
+          throw new Error(`Los cambios del archivo se guardaron, pero no se pudo registrar "${file.name}" en Logs: ${activityError.message}`);
+        }
+      }
       databaseStatus = "Conectado a Supabase";
       loadError = "";
       if (importedOrders.length) {
@@ -2853,7 +3631,10 @@ async function restoreAdminSession() {
     const { data, error } = await window.supabaseClient.auth.getSession();
     if (error) throw error;
     if (data.session) {
-      await startAdminSession(data.session);
+      const { data: userData, error: userError } = await window.supabaseClient.auth.getUser();
+      if (userError) throw userError;
+      if (!userData.user) throw new Error("La sesión no tiene una cuenta activa.");
+      await startAdminSession({ ...data.session, user: userData.user });
     } else {
       showLogin();
     }

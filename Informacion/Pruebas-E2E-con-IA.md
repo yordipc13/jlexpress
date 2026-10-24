@@ -40,6 +40,16 @@ Usar un agente de IA para recorrer la aplicación en un navegador real, ejecutar
 - La evidencia y el reporte identifican el entorno, el archivo de prueba y los pasos ejecutados.
 - Los datos de prueba quedan eliminados o se indica claramente quién debe limpiarlos.
 
+## Casos E2E para roles y repartidores
+
+Ejecutar estos casos únicamente en staging con cuentas y pedidos sintéticos:
+
+1. **Administrador:** invitar una cuenta de prueba con cada rol; cambiar el rol de una cuenta; comprobar que el último administrador no puede ser eliminado ni degradado; eliminar únicamente cuentas de prueba.
+2. **Editor:** comprobar consulta, alta, edición, importación, cambios de estado y eliminación de registros sintéticos; asignar y reasignar un pedido desde el menú contextual; confirmar que no aparece la gestión de cuentas y que la Edge Function rechaza acciones de invitación, cambio de rol o eliminación.
+3. **Repartidor:** comprobar que solo aparecen sus pedidos asignados de `envios`, `paquetes_ruta` y `Xcargo`; que no aparecen registros de otro repartidor; avanzar `en sucursal` → `en camino` → `recibido`; confirmar que no se ofrece un salto directo ni la edición/eliminación.
+4. **Paquetes de ruta:** un paquete asociado a `envios` debe mostrar el estado del envío asociado y actualizar únicamente ese estado; un paquete sin envío asociado debe ser informativo y no ofrecer cambio de estado.
+5. **Autorización de base de datos:** con cuentas courier, verificar en staging que una consulta directa no devuelve filas ajenas y que las escrituras fuera de la RPC de transición están rechazadas por RLS. No considerar suficiente que los botones estén ocultos.
+
 ## Plantilla de mensaje para continuar la conversación
 
 > Buenas, {nombre}. Queríamos dar seguimiento al desarrollo de su aplicación web. Ya contamos con la documentación y las correcciones identificadas. El siguiente paso sería preparar y ejecutar pruebas E2E desde el navegador: recorrer los flujos principales, cargar un archivo de prueba y comparar los resultados con lo esperado. ¿Podría confirmarnos la URL del entorno de pruebas, el archivo sintético y los casos que debemos validar?

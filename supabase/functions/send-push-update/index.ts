@@ -21,7 +21,7 @@ deno.serve(async (request: Request) => {
 	const serviceRoleKey = deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 	const vapidPublicKey = deno.env.get("VAPID_PUBLIC_KEY");
 	const vapidPrivateKey = deno.env.get("VAPID_PRIVATE_KEY");	
-	const vapidSubject = deno.env.get("VAPID_SUBJECT") || "mailto:jlexpressmensajeriaturri@gmail.com";
+	const vapidSubject = deno.env.get("VAPID_SUBJECT") || "mailto:jlexpressturrialba@gmail.com";
 	if (!supabaseUrl || !serviceRoleKey || !vapidPublicKey || !vapidPrivateKey) {
 		console.error("Falta configurar Supabase o las claves VAPID para notificaciones push.");
 		return Response.json({ error: "El servicio push no está configurado." }, { status: 500 });

@@ -7,8 +7,8 @@ AS $$
 DECLARE
   deleted_count bigint;
 BEGIN
-  IF (auth.jwt() -> 'app_metadata' ->> 'role') IS DISTINCT FROM 'admin' THEN
-    RAISE EXCEPTION 'Se requiere una cuenta administradora.';
+  IF COALESCE(auth.jwt() -> 'app_metadata' ->> 'role', '') NOT IN ('admin', 'editor') THEN
+    RAISE EXCEPTION 'Se requiere una cuenta administradora o editora.';
   END IF;
 
   SELECT count(*) INTO deleted_count
@@ -34,8 +34,8 @@ DECLARE
   max_id bigint;
   sequence_name text;
 BEGIN
-  IF (auth.jwt() -> 'app_metadata' ->> 'role') IS DISTINCT FROM 'admin' THEN
-    RAISE EXCEPTION 'Se requiere una cuenta administradora.';
+  IF COALESCE(auth.jwt() -> 'app_metadata' ->> 'role', '') NOT IN ('admin', 'editor') THEN
+    RAISE EXCEPTION 'Se requiere una cuenta administradora o editora.';
   END IF;
 
   SELECT pg_catalog.pg_get_serial_sequence('public.envios', 'id_excel')
@@ -79,8 +79,8 @@ DECLARE
   max_id bigint;
   sequence_name text;
 BEGIN
-  IF (auth.jwt() -> 'app_metadata' ->> 'role') IS DISTINCT FROM 'admin' THEN
-    RAISE EXCEPTION 'Se requiere una cuenta administradora.';
+  IF COALESCE(auth.jwt() -> 'app_metadata' ->> 'role', '') NOT IN ('admin', 'editor') THEN
+    RAISE EXCEPTION 'Se requiere una cuenta administradora o editora.';
   END IF;
 
   SELECT pg_catalog.pg_get_serial_sequence('public.envios', 'id_excel')

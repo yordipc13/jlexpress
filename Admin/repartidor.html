@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f3f6f8" />
+    <title>Pedidos asignados | JL Express</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="admin.css" />
+    <link rel="stylesheet" href="repartidor.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script>
+      if (new URLSearchParams(location.search).get('supabase') === 'staging') {
+        if (['localhost', '127.0.0.1'].includes(location.hostname)) {
+          document.write('<script src="../Staging/supabase-config.js"><\/script>');
+        }
+      }
+    </script>
+    <script src="js/supabase.js" defer></script>
+    <script src="js/repartidor.js?v=1" defer></script>
+  </head>
+  <body>
+    <div class="admin-shell">
+      <header class="topbar">
+        <a class="brand" href="../index.html" aria-label="JL Express, página principal">
+          <img class="brand-mark" src="logo/logo.png" alt="" />
+          <span class="brand-name">JL <strong>EXPRESS</strong></span>
+        </a>
+        <div class="topbar-divider" aria-hidden="true"></div>
+        <p class="topbar-title">Repartidor</p>
+        <div class="topbar-actions">
+          <button class="button button-secondary" id="courier-refresh" type="button" hidden>Actualizar pedidos</button>
+          <button class="button button-secondary" id="courier-sign-out" type="button" hidden>Cerrar sesión</button>
+        </div>
+      </header>
+
+      <main class="auth-panel" id="courier-auth-panel">
+        <section class="auth-card" aria-labelledby="courier-auth-title">
+          <p class="eyebrow"><span></span> ACCESO DE REPARTIDOR</p>
+          <h1 id="courier-auth-title">Pedidos asignados</h1>
+          <p class="page-description">Inicia sesión para consultar los pedidos que te asignaron.</p>
+          <form id="courier-login-form">
+            <label class="form-field" for="courier-login-email">Correo electrónico
+              <input id="courier-login-email" name="email" type="email" autocomplete="username" required />
+            </label>
+            <label class="form-field" for="courier-login-password">Contraseña
+              <input id="courier-login-password" name="password" type="password" autocomplete="current-password" required />
+            </label>
+            <p class="auth-message" id="courier-auth-message" role="status" aria-live="polite"></p>
+            <button class="button button-primary" id="courier-login-submit" type="submit">Iniciar sesión</button>
+          </form>
+        </section>
+      </main>
+
+      <main class="workspace courier-workspace" id="courier-workspace" hidden>
+        <section class="page-heading" aria-labelledby="courier-page-title">
+          <div>
+            <p class="eyebrow"><span></span> REPARTOS</p>
+            <h1 id="courier-page-title">Mis pedidos</h1>
+            <p class="page-description">Solo aparecen los pedidos asignados a tu cuenta.</p>
+          </div>
+          <div class="order-count" aria-live="polite">
+            <span class="count-dot" aria-hidden="true"></span>
+            <span id="courier-count">0 pedidos</span>
+          </div>
+        </section>
+        <p class="courier-message" id="courier-message" role="status" aria-live="polite"></p>
+        <section class="courier-orders" id="courier-orders" aria-label="Pedidos asignados"></section>
+      </main>
+    </div>
+  </body>
+</html>

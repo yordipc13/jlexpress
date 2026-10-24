@@ -6,16 +6,16 @@ CREATE POLICY envios_admin_guard
   AS RESTRICTIVE
   FOR ALL
   TO anon, authenticated
-  USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin')
-  WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
+  USING ((auth.jwt() -> 'app_metadata' ->> 'role') IN ('admin', 'editor'))
+  WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') IN ('admin', 'editor'));
 
 DROP POLICY IF EXISTS envios_admin_access ON public.envios;
 CREATE POLICY envios_admin_access
   ON public.envios
   FOR ALL
   TO authenticated
-  USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin')
-  WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
+  USING ((auth.jwt() -> 'app_metadata' ->> 'role') IN ('admin', 'editor'))
+  WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') IN ('admin', 'editor'));
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.envios TO authenticated;
 
@@ -35,8 +35,8 @@ CREATE POLICY admin_presence_admin_guard
   AS RESTRICTIVE
   FOR ALL
   TO authenticated
-  USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin')
-  WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
+  USING ((auth.jwt() -> 'app_metadata' ->> 'role') IN ('admin', 'editor', 'repartidor'))
+  WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') IN ('admin', 'editor', 'repartidor'));
 
 DROP POLICY IF EXISTS admin_presence_admin_read ON public.admin_presence;
 CREATE POLICY admin_presence_admin_read

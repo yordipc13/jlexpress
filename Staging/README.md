@@ -5,6 +5,7 @@ This folder keeps the staging-only database, configuration, E2E assets, and resu
 ## Contents
 
 - `000_base_schema.sql`: staging baseline; never apply to Production.
+- `../supabase/migrations/20261023124000_role_based_access_and_delivery_assignments.sql`: role and courier-assignment migration; apply only after the required staging tables, including `admin_status_audit`, exist.
 - `supabase-config.js`: public client configuration, loaded only for `?supabase=staging` on localhost.
 - `e2e-import-test.csv`: synthetic import test data with two valid rows and one invalid row.
 - `E2E-RESULTADOS.md`: real staging test results, cleanup, and outstanding limitations.

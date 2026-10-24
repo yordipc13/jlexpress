@@ -43,15 +43,15 @@ CREATE POLICY xcargo_admin_guard
   AS RESTRICTIVE
   FOR ALL
   TO anon, authenticated
-  USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin')
-  WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
+  USING ((auth.jwt() -> 'app_metadata' ->> 'role') IN ('admin', 'editor'))
+  WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') IN ('admin', 'editor'));
 
 CREATE POLICY xcargo_admin_access
   ON public."Xcargo"
   FOR ALL
   TO authenticated
-  USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin')
-  WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
+  USING ((auth.jwt() -> 'app_metadata' ->> 'role') IN ('admin', 'editor'))
+  WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') IN ('admin', 'editor'));
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public."Xcargo" TO authenticated;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO authenticated;

@@ -22,19 +22,22 @@
       }
     </script>
     <script src="js/supabase.js" defer></script>
-    <script src="js/admin.js?v=16" defer></script>
+    <script src="js/admin.js?v=26" defer></script>
   </head>
   <body>
     <div class="admin-shell">
       <header class="topbar">
-        <a class="brand" href="../index.html" aria-label="JL Express, página principal">
-          <img
-            class="brand-mark"
-            src="logo/logo.png"
-            alt=""
-          />
-          <span class="brand-name">JL <strong>EXPRESS</strong></span>
-        </a>
+        <div class="topbar-brand-group">
+          <button class="button button-secondary sidebar-toggle" id="toggle-admin-sidebar" type="button" aria-expanded="false" aria-controls="admin-sidebar" aria-label="Abrir menú de administración" hidden>☰</button>
+          <a class="brand" href="../index.html" aria-label="JL Express, página principal">
+            <img
+              class="brand-mark"
+              src="logo/logo.png"
+              alt=""
+            />
+            <span class="brand-name">JL <strong>EXPRESS</strong></span>
+          </a>
+        </div>
         <div class="topbar-divider" aria-hidden="true"></div>
         <p class="topbar-title">Administración</p>
         <div class="topbar-actions">
@@ -46,11 +49,20 @@
             <span class="theme-icon" aria-hidden="true">☾</span>
             <span class="theme-label">Modo oscuro</span>
           </button>
-          <button class="button button-secondary users-button" id="show-admin-users" type="button" hidden>Usuarios</button>
           <button class="button button-secondary sign-out-button" id="sign-out" type="button" hidden>Cerrar sesión</button>
           <a class="back-link" href="../index.html">Volver al sitio <span aria-hidden="true">↗</span></a>
         </div>
       </header>
+      <div class="sidebar-backdrop" id="sidebar-backdrop" hidden></div>
+      <aside class="admin-sidebar" id="admin-sidebar" aria-label="Menú de administración" aria-hidden="true">
+        <div class="admin-sidebar-heading">
+          <strong>Administración</strong>
+          <button class="icon-button" id="close-admin-sidebar" type="button" aria-label="Cerrar menú">×</button>
+        </div>
+        <button class="admin-sidebar-action" id="show-couriers" type="button">Ver repartidores</button>
+        <button class="admin-sidebar-action" id="show-admin-users" type="button" hidden>Usuarios</button>
+        <button class="admin-sidebar-action" id="show-activity-logs" type="button">Logs</button>
+      </aside>
 
       <main class="auth-panel" id="auth-panel">
         <section class="auth-card" aria-labelledby="auth-title">
@@ -171,6 +183,7 @@
     <div class="context-backdrop" id="context-backdrop" hidden></div>
     <div class="context-menu" id="context-menu" role="menu" aria-label="Acciones del registro" hidden>
       <button type="button" role="menuitem" data-action="edit"><span aria-hidden="true">✎</span><span class="context-action-label">Editar envío</span></button>
+      <button type="button" role="menuitem" data-action="assign"><span aria-hidden="true">↗</span><span class="context-action-label">Asignar repartidor</span></button>
       <button type="button" role="menuitem" data-action="select"><span aria-hidden="true">☑</span><span class="context-action-label">Seleccionar pedido</span></button>
       <button type="button" role="menuitem" data-action="status"><span aria-hidden="true">↻</span> Cambiar estado</button>
       <button type="button" role="menuitem" data-action="finalize"><span aria-hidden="true">✓</span><span class="context-action-label">Finalizar pedido</span></button>
@@ -324,6 +337,58 @@
       </div>
     </dialog>
 
+    <dialog class="users-dialog courier-overview-dialog" id="courier-overview-dialog" aria-labelledby="courier-overview-title">
+      <div class="users-dialog-content">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow"><span></span> DISTRIBUCIÓN</p>
+            <h2 id="courier-overview-title">Repartidores</h2>
+          </div>
+          <button class="icon-button" id="close-courier-overview" type="button" aria-label="Cerrar">×</button>
+        </div>
+        <p class="courier-overview-message" id="courier-overview-message" role="status" aria-live="polite"></p>
+        <div class="courier-overview-list" id="courier-overview-list"></div>
+        <div class="dialog-actions">
+          <button class="button button-secondary" id="refresh-courier-overview" type="button">Actualizar</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog class="users-dialog activity-log-dialog" id="activity-log-dialog" aria-labelledby="activity-log-title">
+      <div class="users-dialog-content">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow"><span></span> ACTIVIDAD RECIENTE</p>
+            <h2 id="activity-log-title">Logs</h2>
+          </div>
+          <button class="icon-button" id="close-activity-logs" type="button" aria-label="Cerrar">×</button>
+        </div>
+        <label class="activity-log-filter" for="activity-log-action">
+          <span>Filtrar acción</span>
+          <select id="activity-log-action">
+            <option value="">Todas las acciones</option>
+            <option value="pedido_agregado">Pedido agregado</option>
+            <option value="pedido_editado">Pedido editado</option>
+            <option value="pedido_borrado">Pedido borrado</option>
+            <option value="estado_cambiado">Cambio de estado</option>
+            <option value="pedido_finalizado">Pedido finalizado</option>
+            <option value="repartidor_finalizo_pedido">Repartidor finalizó pedido</option>
+            <option value="archivo_importado">Archivo importado</option>
+            <option value="repartidor_asignado">Repartidor asignado</option>
+            <option value="asignacion_retirada">Asignación retirada</option>
+            <option value="usuario_agregado">Usuario agregado</option>
+            <option value="rol_cambiado">Rol cambiado</option>
+            <option value="usuario_eliminado">Usuario eliminado</option>
+          </select>
+        </label>
+        <p class="activity-log-message" id="activity-log-message" role="status" aria-live="polite"></p>
+        <div class="activity-log-list" id="activity-log-list" aria-live="polite"></div>
+        <div class="dialog-actions">
+          <button class="button button-secondary" id="refresh-activity-logs" type="button">Actualizar</button>
+        </div>
+      </div>
+    </dialog>
+
     <dialog class="users-dialog bulk-delete-dialog" id="bulk-delete-dialog" aria-labelledby="bulk-delete-title">
       <div class="users-dialog-content">
         <div class="dialog-heading">
@@ -358,16 +423,134 @@
             <thead>
               <tr>
                 <th scope="col">Correo</th>
+                <th scope="col">Rol</th>
                 <th scope="col">Estado</th>
                 <th scope="col">Última conexión</th>
+                <th scope="col">Acciones</th>
               </tr>
             </thead>
             <tbody id="admin-users-body"></tbody>
           </table>
         </div>
         <div class="dialog-actions">
+          <button class="button button-primary" id="open-admin-invite" type="button" hidden>＋ Agregar cuenta</button>
+          <button class="button button-danger" id="open-admin-user-delete" type="button" hidden>− Eliminar cuenta</button>
           <button class="button button-secondary" id="refresh-admin-users" type="button">Actualizar</button>
         </div>
+      </div>
+    </dialog>
+
+    <dialog class="users-dialog account-invite-dialog" id="admin-invite-dialog" aria-labelledby="admin-invite-title">
+      <div class="users-dialog-content">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow"><span></span> ACCESO ADMINISTRATIVO</p>
+            <h2 id="admin-invite-title">Agregar cuenta</h2>
+          </div>
+          <button class="icon-button" id="close-admin-invite" type="button" aria-label="Cerrar">×</button>
+        </div>
+        <p class="invite-description">Se enviará una invitación; el rol seleccionado determina a qué pantallas y acciones tendrá acceso la cuenta.</p>
+        <form id="admin-invite-form">
+          <label class="form-field" for="admin-invite-email">Correo de la nueva cuenta
+            <input id="admin-invite-email" name="email" type="email" autocomplete="email" maxlength="254" required />
+          </label>
+          <label class="form-field" for="admin-invite-role">Rol de la cuenta
+            <select id="admin-invite-role" name="role" required>
+              <option value="admin">Administrador</option>
+              <option value="editor" selected>Editor</option>
+              <option value="repartidor">Repartidor</option>
+            </select>
+          </label>
+          <label class="form-field" for="admin-invite-password">Confirma tu contraseña
+            <input id="admin-invite-password" name="password" type="password" autocomplete="current-password" required />
+            <small class="field-hint">Es la contraseña de tu cuenta administradora actual.</small>
+          </label>
+          <p class="invite-message" id="admin-invite-message" role="status" aria-live="polite"></p>
+          <div class="dialog-actions">
+            <button class="button button-secondary" id="cancel-admin-invite" type="button">Cancelar</button>
+            <button class="button button-primary" id="submit-admin-invite" type="submit">Enviar invitación</button>
+          </div>
+        </form>
+      </div>
+    </dialog>
+
+    <dialog class="users-dialog account-delete-dialog" id="admin-user-delete-dialog" aria-labelledby="admin-user-delete-title">
+      <div class="users-dialog-content">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow"><span></span> REVOCAR ACCESO</p>
+            <h2 id="admin-user-delete-title">Eliminar cuenta</h2>
+          </div>
+          <button class="icon-button" id="close-admin-user-delete" type="button" aria-label="Cerrar">×</button>
+        </div>
+        <p class="account-delete-description" id="admin-user-delete-description">Selecciona una cuenta autorizada. No puedes eliminar la cuenta con la que tienes la sesión abierta.</p>
+        <form id="admin-user-delete-form">
+          <label class="form-field" for="admin-user-delete-target">Cuenta que quieres eliminar
+            <select id="admin-user-delete-target" name="user_id" required></select>
+          </label>
+          <label class="form-field" for="admin-user-delete-password">Confirma tu contraseña
+            <input id="admin-user-delete-password" name="password" type="password" autocomplete="current-password" required />
+            <small class="field-hint">Es la contraseña de tu cuenta administradora actual.</small>
+          </label>
+          <p class="invite-message" id="admin-user-delete-message" role="status" aria-live="polite"></p>
+          <div class="dialog-actions">
+            <button class="button button-secondary" id="cancel-admin-user-delete" type="button">Cancelar</button>
+            <button class="button button-danger" id="submit-admin-user-delete" type="submit">Eliminar cuenta</button>
+          </div>
+        </form>
+      </div>
+    </dialog>
+
+    <dialog class="users-dialog account-role-dialog" id="admin-user-role-dialog" aria-labelledby="admin-user-role-title">
+      <div class="users-dialog-content">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow"><span></span> CAMBIAR PERMISOS</p>
+            <h2 id="admin-user-role-title">Cambiar rol</h2>
+          </div>
+          <button class="icon-button" id="close-admin-user-role" type="button" aria-label="Cerrar">×</button>
+        </div>
+        <p class="account-role-description" id="admin-user-role-description"></p>
+        <form id="admin-user-role-form">
+          <label class="form-field" for="admin-user-role-target">Nuevo rol
+            <select id="admin-user-role-target" name="role" required>
+              <option value="admin">Administrador</option>
+              <option value="editor">Editor</option>
+              <option value="repartidor">Repartidor</option>
+            </select>
+          </label>
+          <label class="form-field" for="admin-user-role-password">Confirma tu contraseña
+            <input id="admin-user-role-password" name="password" type="password" autocomplete="current-password" required />
+          </label>
+          <p class="invite-message" id="admin-user-role-message" role="status" aria-live="polite"></p>
+          <div class="dialog-actions">
+            <button class="button button-secondary" id="cancel-admin-user-role" type="button">Cancelar</button>
+            <button class="button button-primary" id="submit-admin-user-role" type="submit">Guardar rol</button>
+          </div>
+        </form>
+      </div>
+    </dialog>
+
+    <dialog class="users-dialog delivery-assignment-dialog" id="delivery-assignment-dialog" aria-labelledby="delivery-assignment-title">
+      <div class="users-dialog-content">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow"><span></span> ASIGNACIÓN DE PEDIDOS</p>
+            <h2 id="delivery-assignment-title">Asignar repartidor</h2>
+          </div>
+          <button class="icon-button" id="close-delivery-assignment" type="button" aria-label="Cerrar">×</button>
+        </div>
+        <p class="assignment-description" id="delivery-assignment-description"></p>
+        <form id="delivery-assignment-form">
+          <label class="form-field" for="delivery-assignment-courier">Repartidor
+            <select id="delivery-assignment-courier" name="courier_user_id" required></select>
+          </label>
+          <p class="assignment-message" id="delivery-assignment-message" role="status" aria-live="polite"></p>
+          <div class="dialog-actions">
+            <button class="button button-secondary" id="cancel-delivery-assignment" type="button">Cancelar</button>
+            <button class="button button-primary" id="save-delivery-assignment" type="submit">Guardar asignación</button>
+          </div>
+        </form>
       </div>
     </dialog>
 

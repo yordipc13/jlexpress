@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="x-apple-disable-message-reformatting" />
+    <title>Invitación a JL Express</title>
+  </head>
+  <body style="margin:0;padding:0;background-color:#eef2f5;font-family:Arial,Helvetica,sans-serif;color:#1f2d39;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#eef2f5;">
+      <tr>
+        <td align="center" style="padding:36px 16px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="width:100%;max-width:600px;background-color:#ffffff;border:1px solid #dfe5e9;">
+            <tr>
+              <td style="height:6px;background-color:#d9434d;font-size:0;line-height:0;">&nbsp;</td>
+            </tr>
+            <tr>
+              <td style="padding:24px 32px;border-bottom:1px solid #dfe5e9;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                  <tr>
+                    <td width="72" valign="middle" style="width:72px;padding-right:14px;">
+                      <img src="https://jlexpress.pages.dev/logo/logo.png" width="68" height="68" alt="JL Express" style="display:block;width:68px;height:68px;object-fit:contain;border:0;" />
+                    </td>
+                    <td valign="middle" style="font-size:14px;line-height:1.4;font-weight:700;letter-spacing:1px;color:#163b5c;">
+                      JL <span style="color:#d9434d;">EXPRESS</span><br />
+                      <span style="font-size:12px;font-weight:400;letter-spacing:0;color:#74818c;">Administración de envíos</span>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:36px 32px 18px;">
+                <p style="margin:0 0 10px;font-size:11px;line-height:1.5;font-weight:700;letter-spacing:1.2px;color:#d9434d;">INVITACIÓN DE ACCESO</p>
+                <h1 style="margin:0;font-size:27px;line-height:1.25;font-weight:700;color:#102e49;">Te damos la bienvenida al equipo</h1>
+                <p style="margin:18px 0 0;font-size:15px;line-height:1.7;color:#52616d;">
+                  JL Express te invita a unirte a su equipo. Al aceptar, se activará tu acceso con el siguiente rol: <strong>{{ .Data.assigned_role }}</strong>.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td align="left" style="padding:12px 32px 28px;">
+                <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:14px 22px;background-color:#163b5c;border:1px solid #163b5c;color:#ffffff;font-size:14px;line-height:1.2;font-weight:700;text-decoration:none;">Aceptar invitación</a>
+                <p style="margin:20px 0 0;font-size:13px;line-height:1.7;color:#74818c;">
+                  Si el botón no funciona, abre este enlace en tu navegador:<br />
+                  <a href="{{ .ConfirmationURL }}" style="color:#163b5c;word-break:break-all;">{{ .ConfirmationURL }}</a>
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:20px 32px;background-color:#f7f9fa;border-top:1px solid #dfe5e9;">
+                <p style="margin:0;font-size:12px;line-height:1.7;color:#74818c;">
+                  Si no esperabas esta invitación, puedes ignorar este mensaje. No se activará ninguna cuenta hasta que se confirme desde el enlace.
+                </p>
+                <p style="margin:12px 0 0;font-size:12px;line-height:1.5;font-weight:700;color:#163b5c;">JL Express</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

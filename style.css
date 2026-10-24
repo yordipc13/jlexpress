@@ -966,6 +966,28 @@ h2 {
   line-height: 1.6;
 }
 
+.tracking-notification-field {
+  display: grid;
+  gap: 6px;
+  max-width: 420px;
+  margin-top: 12px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.tracking-notification-field input {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 11px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font: inherit;
+  font-weight: 400;
+}
+
 .tracking-notification-actions {
   display: flex;
   flex-wrap: wrap;

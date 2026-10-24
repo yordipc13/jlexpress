@@ -29,16 +29,16 @@ CREATE POLICY paquetes_ruta_admin_guard
   AS RESTRICTIVE
   FOR ALL
   TO authenticated
-  USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin')
-  WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
+  USING ((auth.jwt() -> 'app_metadata' ->> 'role') IN ('admin', 'editor'))
+  WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') IN ('admin', 'editor'));
 
 DROP POLICY IF EXISTS paquetes_ruta_admin_access ON public.paquetes_ruta;
 CREATE POLICY paquetes_ruta_admin_access
   ON public.paquetes_ruta
   FOR ALL
   TO authenticated
-  USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin')
-  WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
+  USING ((auth.jwt() -> 'app_metadata' ->> 'role') IN ('admin', 'editor'))
+  WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') IN ('admin', 'editor'));
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.paquetes_ruta TO authenticated;
 GRANT USAGE, SELECT ON SEQUENCE public.paquetes_ruta_id_seq TO authenticated;

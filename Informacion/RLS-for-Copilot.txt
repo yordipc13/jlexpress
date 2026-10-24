@@ -1,0 +1,547 @@
+[
+  {
+    "schemaname": "public",
+    "tablename": "Xcargo",
+    "policyname": "paquetes_empresa_3_admin_access",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "using_expression": "(((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text)",
+    "with_check": "(((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "Xcargo",
+    "policyname": "paquetes_empresa_3_admin_guard",
+    "permissive": "RESTRICTIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "using_expression": "(((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text)",
+    "with_check": "(((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "admin_presence",
+    "policyname": "admin_presence_admin_guard",
+    "permissive": "RESTRICTIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "using_expression": "(((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text)",
+    "with_check": "(((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "admin_presence",
+    "policyname": "admin_presence_admin_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "using_expression": "(((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text)",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "admin_presence",
+    "policyname": "admin_presence_own_insert",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "INSERT",
+    "using_expression": null,
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "admin_presence",
+    "policyname": "admin_presence_own_update",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "UPDATE",
+    "using_expression": "(user_id = auth.uid())",
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "admin_status_audit",
+    "policyname": "admin_status_audit_admin_guard",
+    "permissive": "RESTRICTIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "using_expression": "(((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text)",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "admin_status_audit",
+    "policyname": "admin_status_audit_admin_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "using_expression": "(((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text)",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "envios",
+    "policyname": "envios_admin_access",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "using_expression": "(((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text)",
+    "with_check": "(((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "envios",
+    "policyname": "envios_admin_guard",
+    "permissive": "RESTRICTIVE",
+    "roles": "{anon,authenticated}",
+    "cmd": "ALL",
+    "using_expression": "(((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text)",
+    "with_check": "(((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "paquetes_ruta",
+    "policyname": "paquetes_ruta_admin_access",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "using_expression": "(((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text)",
+    "with_check": "(((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "paquetes_ruta",
+    "policyname": "paquetes_ruta_admin_guard",
+    "permissive": "RESTRICTIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "using_expression": "(((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text)",
+    "with_check": "(((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text)"
+  }
+]
+
+#####################################################################################
+
+[
+  {
+    "schema": "public",
+    "table_name": "Xcargo",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "schema": "public",
+    "table_name": "admin_account_managers",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "schema": "public",
+    "table_name": "admin_presence",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "schema": "public",
+    "table_name": "admin_status_audit",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "schema": "public",
+    "table_name": "envios",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "schema": "public",
+    "table_name": "paquetes_ruta",
+    "rls_enabled": true,
+    "rls_forced": false
+  }
+]
+
+################################################################################
+
+[
+  {
+    "tablename": "Xcargo",
+    "policyname": "xcargo_courier_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT"
+  },
+  {
+    "tablename": "Xcargo",
+    "policyname": "xcargo_delete_staff_guard",
+    "permissive": "RESTRICTIVE",
+    "roles": "{authenticated}",
+    "cmd": "DELETE"
+  },
+  {
+    "tablename": "Xcargo",
+    "policyname": "xcargo_role_guard",
+    "permissive": "RESTRICTIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL"
+  },
+  {
+    "tablename": "Xcargo",
+    "policyname": "xcargo_staff_access",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL"
+  },
+  {
+    "tablename": "Xcargo",
+    "policyname": "xcargo_update_staff_guard",
+    "permissive": "RESTRICTIVE",
+    "roles": "{authenticated}",
+    "cmd": "UPDATE"
+  },
+  {
+    "tablename": "admin_presence",
+    "policyname": "admin_presence_admin_guard",
+    "permissive": "RESTRICTIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL"
+  },
+  {
+    "tablename": "admin_presence",
+    "policyname": "admin_presence_admin_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT"
+  },
+  {
+    "tablename": "admin_presence",
+    "policyname": "admin_presence_own_insert",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "INSERT"
+  },
+  {
+    "tablename": "admin_presence",
+    "policyname": "admin_presence_own_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT"
+  },
+  {
+    "tablename": "admin_presence",
+    "policyname": "admin_presence_own_update",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "UPDATE"
+  },
+  {
+    "tablename": "admin_status_audit",
+    "policyname": "admin_status_audit_admin_guard",
+    "permissive": "RESTRICTIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT"
+  },
+  {
+    "tablename": "admin_status_audit",
+    "policyname": "admin_status_audit_admin_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT"
+  },
+  {
+    "tablename": "delivery_assignments",
+    "policyname": "delivery_assignments_courier_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT"
+  },
+  {
+    "tablename": "delivery_assignments",
+    "policyname": "delivery_assignments_role_guard",
+    "permissive": "RESTRICTIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL"
+  },
+  {
+    "tablename": "delivery_assignments",
+    "policyname": "delivery_assignments_staff_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT"
+  },
+  {
+    "tablename": "envios",
+    "policyname": "envios_courier_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT"
+  },
+  {
+    "tablename": "envios",
+    "policyname": "envios_delete_staff_guard",
+    "permissive": "RESTRICTIVE",
+    "roles": "{authenticated}",
+    "cmd": "DELETE"
+  },
+  {
+    "tablename": "envios",
+    "policyname": "envios_role_guard",
+    "permissive": "RESTRICTIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL"
+  },
+  {
+    "tablename": "envios",
+    "policyname": "envios_staff_access",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL"
+  },
+  {
+    "tablename": "envios",
+    "policyname": "envios_update_staff_guard",
+    "permissive": "RESTRICTIVE",
+    "roles": "{authenticated}",
+    "cmd": "UPDATE"
+  },
+  {
+    "tablename": "paquetes_ruta",
+    "policyname": "paquetes_ruta_courier_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT"
+  },
+  {
+    "tablename": "paquetes_ruta",
+    "policyname": "paquetes_ruta_delete_staff_guard",
+    "permissive": "RESTRICTIVE",
+    "roles": "{authenticated}",
+    "cmd": "DELETE"
+  },
+  {
+    "tablename": "paquetes_ruta",
+    "policyname": "paquetes_ruta_role_guard",
+    "permissive": "RESTRICTIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL"
+  },
+  {
+    "tablename": "paquetes_ruta",
+    "policyname": "paquetes_ruta_staff_access",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL"
+  },
+  {
+    "tablename": "paquetes_ruta",
+    "policyname": "paquetes_ruta_update_staff_guard",
+    "permissive": "RESTRICTIVE",
+    "roles": "{authenticated}",
+    "cmd": "UPDATE"
+  }
+]
+
+######################################################################################
+[
+  {
+    "tablename": "Xcargo",
+    "policyname": "xcargo_courier_read",
+    "permissive": "PERMISSIVE",
+    "cmd": "SELECT",
+    "using_expression": "((current_app_role() = 'repartidor'::text) AND (EXISTS ( SELECT 1\n   FROM delivery_assignments assignment\n  WHERE ((assignment.source_table = 'Xcargo'::text) AND (upper(btrim(assignment.tracking_code)) = upper(btrim(\"Xcargo\".tracking_code))) AND (assignment.courier_user_id = ( SELECT auth.uid() AS uid))))))",
+    "with_check": null
+  },
+  {
+    "tablename": "Xcargo",
+    "policyname": "xcargo_delete_staff_guard",
+    "permissive": "RESTRICTIVE",
+    "cmd": "DELETE",
+    "using_expression": "(current_app_role() = ANY (ARRAY['admin'::text, 'editor'::text]))",
+    "with_check": null
+  },
+  {
+    "tablename": "Xcargo",
+    "policyname": "xcargo_role_guard",
+    "permissive": "RESTRICTIVE",
+    "cmd": "ALL",
+    "using_expression": "((current_app_role() = ANY (ARRAY['admin'::text, 'editor'::text])) OR ((current_app_role() = 'repartidor'::text) AND (EXISTS ( SELECT 1\n   FROM delivery_assignments assignment\n  WHERE ((assignment.source_table = 'Xcargo'::text) AND (upper(btrim(assignment.tracking_code)) = upper(btrim(\"Xcargo\".tracking_code))) AND (assignment.courier_user_id = ( SELECT auth.uid() AS uid)))))))",
+    "with_check": "(current_app_role() = ANY (ARRAY['admin'::text, 'editor'::text]))"
+  },
+  {
+    "tablename": "Xcargo",
+    "policyname": "xcargo_staff_access",
+    "permissive": "PERMISSIVE",
+    "cmd": "ALL",
+    "using_expression": "(current_app_role() = ANY (ARRAY['admin'::text, 'editor'::text]))",
+    "with_check": "(current_app_role() = ANY (ARRAY['admin'::text, 'editor'::text]))"
+  },
+  {
+    "tablename": "Xcargo",
+    "policyname": "xcargo_update_staff_guard",
+    "permissive": "RESTRICTIVE",
+    "cmd": "UPDATE",
+    "using_expression": "(current_app_role() = ANY (ARRAY['admin'::text, 'editor'::text]))",
+    "with_check": "(current_app_role() = ANY (ARRAY['admin'::text, 'editor'::text]))"
+  },
+  {
+    "tablename": "admin_presence",
+    "policyname": "admin_presence_admin_guard",
+    "permissive": "RESTRICTIVE",
+    "cmd": "ALL",
+    "using_expression": "(current_app_role() = ANY (ARRAY['admin'::text, 'editor'::text, 'repartidor'::text]))",
+    "with_check": "(current_app_role() = ANY (ARRAY['admin'::text, 'editor'::text, 'repartidor'::text]))"
+  },
+  {
+    "tablename": "admin_presence",
+    "policyname": "admin_presence_admin_read",
+    "permissive": "PERMISSIVE",
+    "cmd": "SELECT",
+    "using_expression": "(current_app_role() = 'admin'::text)",
+    "with_check": null
+  },
+  {
+    "tablename": "admin_presence",
+    "policyname": "admin_presence_own_insert",
+    "permissive": "PERMISSIVE",
+    "cmd": "INSERT",
+    "using_expression": null,
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "tablename": "admin_presence",
+    "policyname": "admin_presence_own_read",
+    "permissive": "PERMISSIVE",
+    "cmd": "SELECT",
+    "using_expression": "(user_id = ( SELECT auth.uid() AS uid))",
+    "with_check": null
+  },
+  {
+    "tablename": "admin_presence",
+    "policyname": "admin_presence_own_update",
+    "permissive": "PERMISSIVE",
+    "cmd": "UPDATE",
+    "using_expression": "(user_id = auth.uid())",
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "tablename": "admin_status_audit",
+    "policyname": "admin_status_audit_admin_guard",
+    "permissive": "RESTRICTIVE",
+    "cmd": "SELECT",
+    "using_expression": "(current_app_role() = ANY (ARRAY['admin'::text, 'editor'::text]))",
+    "with_check": null
+  },
+  {
+    "tablename": "admin_status_audit",
+    "policyname": "admin_status_audit_admin_read",
+    "permissive": "PERMISSIVE",
+    "cmd": "SELECT",
+    "using_expression": "(current_app_role() = ANY (ARRAY['admin'::text, 'editor'::text]))",
+    "with_check": null
+  },
+  {
+    "tablename": "delivery_assignments",
+    "policyname": "delivery_assignments_courier_read",
+    "permissive": "PERMISSIVE",
+    "cmd": "SELECT",
+    "using_expression": "((current_app_role() = 'repartidor'::text) AND (courier_user_id = ( SELECT auth.uid() AS uid)))",
+    "with_check": null
+  },
+  {
+    "tablename": "delivery_assignments",
+    "policyname": "delivery_assignments_role_guard",
+    "permissive": "RESTRICTIVE",
+    "cmd": "ALL",
+    "using_expression": "((current_app_role() = ANY (ARRAY['admin'::text, 'editor'::text])) OR ((current_app_role() = 'repartidor'::text) AND (courier_user_id = ( SELECT auth.uid() AS uid))))",
+    "with_check": "(current_app_role() = ANY (ARRAY['admin'::text, 'editor'::text]))"
+  },
+  {
+    "tablename": "delivery_assignments",
+    "policyname": "delivery_assignments_staff_read",
+    "permissive": "PERMISSIVE",
+    "cmd": "SELECT",
+    "using_expression": "(current_app_role() = ANY (ARRAY['admin'::text, 'editor'::text]))",
+    "with_check": null
+  },
+  {
+    "tablename": "envios",
+    "policyname": "envios_courier_read",
+    "permissive": "PERMISSIVE",
+    "cmd": "SELECT",
+    "using_expression": "((current_app_role() = 'repartidor'::text) AND (EXISTS ( SELECT 1\n   FROM delivery_assignments assignment\n  WHERE ((assignment.source_table = ANY (ARRAY['envios'::text, 'paquetes_ruta'::text])) AND (upper(btrim(assignment.tracking_code)) = upper(btrim(envios.tracking_code))) AND (assignment.courier_user_id = ( SELECT auth.uid() AS uid))))))",
+    "with_check": null
+  },
+  {
+    "tablename": "envios",
+    "policyname": "envios_delete_staff_guard",
+    "permissive": "RESTRICTIVE",
+    "cmd": "DELETE",
+    "using_expression": "(current_app_role() = ANY (ARRAY['admin'::text, 'editor'::text]))",
+    "with_check": null
+  },
+  {
+    "tablename": "envios",
+    "policyname": "envios_role_guard",
+    "permissive": "RESTRICTIVE",
+    "cmd": "ALL",
+    "using_expression": "((current_app_role() = ANY (ARRAY['admin'::text, 'editor'::text])) OR ((current_app_role() = 'repartidor'::text) AND (EXISTS ( SELECT 1\n   FROM delivery_assignments assignment\n  WHERE ((assignment.source_table = ANY (ARRAY['envios'::text, 'paquetes_ruta'::text])) AND (upper(btrim(assignment.tracking_code)) = upper(btrim(envios.tracking_code))) AND (assignment.courier_user_id = ( SELECT auth.uid() AS uid)))))))",
+    "with_check": "(current_app_role() = ANY (ARRAY['admin'::text, 'editor'::text]))"
+  },
+  {
+    "tablename": "envios",
+    "policyname": "envios_staff_access",
+    "permissive": "PERMISSIVE",
+    "cmd": "ALL",
+    "using_expression": "(current_app_role() = ANY (ARRAY['admin'::text, 'editor'::text]))",
+    "with_check": "(current_app_role() = ANY (ARRAY['admin'::text, 'editor'::text]))"
+  },
+  {
+    "tablename": "envios",
+    "policyname": "envios_update_staff_guard",
+    "permissive": "RESTRICTIVE",
+    "cmd": "UPDATE",
+    "using_expression": "(current_app_role() = ANY (ARRAY['admin'::text, 'editor'::text]))",
+    "with_check": "(current_app_role() = ANY (ARRAY['admin'::text, 'editor'::text]))"
+  },
+  {
+    "tablename": "paquetes_ruta",
+    "policyname": "paquetes_ruta_courier_read",
+    "permissive": "PERMISSIVE",
+    "cmd": "SELECT",
+    "using_expression": "((current_app_role() = 'repartidor'::text) AND (EXISTS ( SELECT 1\n   FROM delivery_assignments assignment\n  WHERE ((assignment.source_table = ANY (ARRAY['envios'::text, 'paquetes_ruta'::text])) AND (upper(btrim(assignment.tracking_code)) = upper(btrim(paquetes_ruta.tracking_code))) AND (assignment.courier_user_id = ( SELECT auth.uid() AS uid))))))",
+    "with_check": null
+  },
+  {
+    "tablename": "paquetes_ruta",
+    "policyname": "paquetes_ruta_delete_staff_guard",
+    "permissive": "RESTRICTIVE",
+    "cmd": "DELETE",
+    "using_expression": "(current_app_role() = ANY (ARRAY['admin'::text, 'editor'::text]))",
+    "with_check": null
+  },
+  {
+    "tablename": "paquetes_ruta",
+    "policyname": "paquetes_ruta_role_guard",
+    "permissive": "RESTRICTIVE",
+    "cmd": "ALL",
+    "using_expression": "((current_app_role() = ANY (ARRAY['admin'::text, 'editor'::text])) OR ((current_app_role() = 'repartidor'::text) AND (EXISTS ( SELECT 1\n   FROM delivery_assignments assignment\n  WHERE ((assignment.source_table = ANY (ARRAY['envios'::text, 'paquetes_ruta'::text])) AND (upper(btrim(assignment.tracking_code)) = upper(btrim(paquetes_ruta.tracking_code))) AND (assignment.courier_user_id = ( SELECT auth.uid() AS uid)))))))",
+    "with_check": "(current_app_role() = ANY (ARRAY['admin'::text, 'editor'::text]))"
+  },
+  {
+    "tablename": "paquetes_ruta",
+    "policyname": "paquetes_ruta_staff_access",
+    "permissive": "PERMISSIVE",
+    "cmd": "ALL",
+    "using_expression": "(current_app_role() = ANY (ARRAY['admin'::text, 'editor'::text]))",
+    "with_check": "(current_app_role() = ANY (ARRAY['admin'::text, 'editor'::text]))"
+  },
+  {
+    "tablename": "paquetes_ruta",
+    "policyname": "paquetes_ruta_update_staff_guard",
+    "permissive": "RESTRICTIVE",
+    "cmd": "UPDATE",
+    "using_expression": "(current_app_role() = ANY (ARRAY['admin'::text, 'editor'::text]))",
+    "with_check": "(current_app_role() = ANY (ARRAY['admin'::text, 'editor'::text]))"
+  }
+]
